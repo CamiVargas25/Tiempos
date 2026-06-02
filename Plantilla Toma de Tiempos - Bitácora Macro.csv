@@ -1,0 +1,14 @@
+Muelle,Placa,Evento,Hora Inicio,Hora Final,# Despacho,Tipo Vh
+3,R10991,Llegada de vehículo ,12:23,,,Mula
+3,,Llegada de vehículo,2:00,3.51,,Mula
+2,,Llegada,3:58,,,Sencillo 
+3,,Llegada de vehículo ,4:21,,,Sencillo 
+2,,Llegada de vehiculo ,10:09,10:59,,
+1,S62883,Llegada de vehiculo ,1:55,,,
+3,,Llegada de vehiculo ,11:07,2:53,,Doble troque
+3,,llegada ded vehiculo,2:56,4:02,,Sencillo
+3,,Llegada de vehiculo ,,,,
+,KKJ156,Llegada vehiculo,4:20,,,
+,S59811,Llegada vehiculo,4:25,,,Mula
+,,Llegada de vehiculo ,10:16,10:40,,Sencillo
+,,,10:47,11:30,,

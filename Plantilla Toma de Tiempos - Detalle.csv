@@ -1,0 +1,293 @@
+ID Reg,Fecha,# Despacho,# Pedido,Zona Asignada,Placa,Tipo Vehiculo,Tipo Presentacion,Cant Unidades,Personal Asignado,Subproceso,Hora Inicio (HH:MM:SS),Hora Fin (HH:MM:SS),Tiempo Total (Min),Tiempo Muerto (Min),Causa de Tiempo Muerto,Observaciones / Restricciones Detectadas
+1,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,Re acomodar Estibas,11:30,11:32,2,,Espersa de Vehículos,
+2,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,Vinipelar,11:32,11:33,1,,,
+3,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:33,11:34,1,,,
+4,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:35,11:36,1,,,
+5,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,2,,11:36,11:37,1,,,
+6,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:37,11:38,1,,,
+7,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:38,11:39,1,,,
+8,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:39,11:40,1,,,
+9,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:40,11:41,1,,,
+10,26/05/2026,,,Pre - Alistamiento,,,Estibado Canastas,,1,,11:49,11:50,1,,,
+11,26/05/2026,Lebrija,,3,,Sencillo,Estibado Suelto,,1,cargue,2:53,3:34,41,,,
+12,26/05/2026,Lebrija,,3,,,Estibado suelto,,,Tiempo Muerto,3:34,3:45,,10,Otro,Inician reunión con todos los operarios en la zona de despachos 
+13,26/05/2026,Lebrija,,3,,,Estibado suelto,,1,cargue,3:45,3:58,13,,,
+14,27/05/2026,Cartagena,,1,,Mula,Estibas y canastas,1280 canastas y 60 estibas,3,descargue,11:10,11:47,37,,,
+15,27/05/2026,Cartagena,,1,,Mula,Estibas y canastas,,1,Limpieza,11:47,11:52,5,,,
+16,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,11:52,11:56,4,,,
+17,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Cargue,11:56,12:01,5,,,
+18,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Re estibado,11:57,12:04,7,,,
+19,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Cargue,12:04,12:15,11,,Otro,Estaban re acomodando una estiba 
+20,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,1,Cargue,12:15,12:19,4,,,
+21,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,12:19,12:21,2,,,
+22,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,cargue,12:21,12:24,3,,,
+23,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,12:24,12:26,2,,,
+24,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,12:26,12:29,3,,,
+25,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,re estibado,12:29,12:32,3,,,
+26,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,12:32,12:34,2,,,
+27,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,re estibado,12:34,12:37,3,,,
+28,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,,Tiempo Muerto,12:37,12:40,,3,Pasillos Obstaculizados,
+29,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,re estibado,12:40,12:41,1,,,
+30,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Cargue,12:41,12:43,2,,,
+31,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,12:43,12:45,2,,,
+32,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,12:45,12:49,4,,,
+33,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,12:49,12:51,2,,,
+34,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,12:51,12:55,4,,,
+35,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,12:55,12:57,2,,,
+36,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,12:57,13:02,5,,,
+37,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,1:02,13:03,1,,,
+38,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,1:03,13:06,3,,,
+39,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,1:06,13:13,7,,,
+40,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,1:13,13:18,5,,,
+41,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,1:18,13:22,4,,,
+42,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,3,Re estibado,1:22,13:25,3,,,
+43,27/05/2026,Cartagena,,1,,Mula,Estibado canasta,,2,Cargue,1:25,13:28,3,,,
+44,27/05/2026,Cartagena,,1,,Mula,,,,Tiempo Muerto,1:28,13:34,,8,Otro,Estaban re acomodando una estiba 
+45,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,2,Vinepelando,3:17,3:18,1,,,
+46,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,1,Cargue,3:18,3:22,4,,,
+47,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,1,Vinepelando,3:22,3:27,5,,,
+48,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,2,Cargue,3:27,3:28,1,,,
+49,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,1,Vinepelando,3:30,3:31,1,,,
+50,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,2,Cargue,3:31,3:32,1,,,
+51,27/05/2026,Bucaramanga,,2,,Sencillo,Estibado caja,,2,Cargue,3:32,3:33,1,,,
+52,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,1,Preparacion Inicial,3:37,3:39,2,,,
+53,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,2,Remonte canasta,3:39,3:44,5,,,
+54,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,,Tiempo Muerto,3:44,3:50,,6,Otro,Se realiza toma de medidas
+55,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,3,Remonte canasta,3:50,3:51,1,,,
+56,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,2,Cargue,3:51,3:53,2,,,
+57,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,2,Remonte canasta,3:53,3:54,1,,,
+58,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,2,Cargue,3:54,3:56,2,,,
+59,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,2,Remonte canasta,3:57,4:04,7,,,
+60,27/05/2026,Bogota,,2,WNY371,Sencillo,Estibado canasta,,3,Cargue,4:04,4:07,3,,,
+61,28/05/2026,Cucuta ,,2,TTW561,Doble Troqué ,Estibado canasta,,2,Muelle,11:30,11:55,25,25,Falta de Producto,"El monta cargas está siendo utilizado para cargar otro vehículo debido a la falta de producto, el vebiculo esta en muelle"
+62,28/05/2026,Cucuta,,2,TRW561,Doble Troqué ,Estibado canasta,,1,Preparación Vehículo ,11:55,12:14,19,,,
+63,28/05/2026,Cúcuta,,2,TRW561,Doble Troqué ,Estibado canasta,,2,Re estibado ,12:09,12:17,8,,,
+64,28/05/2026,Cúcuta,,2,TRW561,Doble Troqué ,Estibado canasta,,,Tiempo muerto ,12:28,12:37,,9,Otro,Las cajas ya estaban en el muelle pero se estaban realizando otras actividades 
+65,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,,Tiempo muerto ,2:00,2:16,,16,Otro,
+66,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canasta ,2:16,2:17,1,,,
+67,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,2:17,2:18,1,,,
+68,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,2:20,2:21,1,,,
+69,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Cargue,2:26,2:27,1,,,
+70,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canasta,2:31,2:32,1,,,
+71,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Cargue,2:33,2:34,1,,,
+72,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,2:35,2:37,2,,,
+73,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue ,2:42,2:43,1,,,
+74,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,2:46,2:47,1,,,
+75,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,2:50,2:52,2,,,
+76,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,,Tiempo muerto,2:52,2:55,,3,Alistamiento de Producto ,Estaba organizando y trayendo producto 
+77,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canasta ,2:55,2:56,1,,,
+78,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,2:56,2:57,1,,,
+79,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canasta,2:57,2:59,2,,,
+80,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,,Tiempo muerto,2:59,3:00,,1,Otro,Cargando otro vehículo 
+81,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,3:00,3:01,1,,,
+82,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,,Tiempo muerto,3:01,3:08,,7,Alistamiento de Producto ,Estaban buscando más producto para cargar 
+83,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canasta,3:08,3:09,1,,,
+84,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue ,3:09,3:10,1,,,
+85,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,,Tiempo muerto ,3:10,3:13,,3,Alistamiento de Producto ,Estaban organizando y trayendo más producto para cargar 
+86,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canastas,3:13,3:14,1,,,
+87,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,3:14,3:15,1,,,
+88,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canastas,3:15,3:16,1,,,
+89,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,3:16,3:17,1,,,
+90,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,2,Remonte canastas,3:17,3:20,3,,,
+91,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,1,Cargue,3:20,3:22,2,,,
+92,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,Estibado canasta,,, Tiempo muerto ,3:22,4:35,,13,Falta de Producto,
+93,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas,,1,Cargue ,4:35,4:36,1,,,
+94,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas ,,1,Cargue,4:37,4:40,3,,,
+95,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas ,,1,Cargue,4:40,4:43,3,,,
+96,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas ,,1,Cargue,4:43,4:45,2,,,
+97,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas ,,,Tiempo muerto,4:45,4:48,,3,Otro,Estan siendo organizados vehiculos con canastas
+98,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas ,,1,Cargue,4:48,4:52,4,,,
+99,28/05/2026,Cartagena ,,1,TTW564,Doble troqué ,A piso cajas ,,1,Cargue ,4:52,4:57,5,,,
+100,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,9:24,9:31,,7,Pasillos Obstaculizados,Estan siendo organizados vehiculos con canastas
+101,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,2,Cargue,9:31,9:32,1,,,
+102,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,2,Cargue,9:32,9:33,1,,,
+103,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,2,cargue,9:33,9:34,1,,,
+104,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,9:34,10:02,,26,Otro,Maquina detenida
+105,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue ,10:02,10:03,1,,,
+106,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:03,10:05,2,,,
+107,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,10:05,10:07,2,2,Alistamiento de Producto ,Se estan trayendo mas producto para cargue
+108,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Remonte canasta,10:07,10:08,1,,,
+109,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:08,10:09,1,,,
+110,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,10:09,10:11,2,2,Alistamiento de Producto ,Se estan trayendo mas producto para cargue
+111,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:11,10:12,1,,,
+112,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,10:12,10:24,,12,Alistamiento de Producto ,Se estan trayendo mas producto para cargue
+113,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:24,10:25,1,,,
+114,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,10:25,10:27,,2,Alistamiento de Producto ,Se estan trayendo mas producto para cargue
+115,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:27,10:28,1,,,
+116,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:28,10:29,1,,,
+117,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:29,10:31,2,,,
+118,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,10:31,10:33,,2,Alistamiento de Producto ,Se estan trayendo mas producto para cargue
+119,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Cargue,10:33,10:35,2,,,
+120,29/05/2026,Bucaramanga,,1,,,,,,Tiempo muerto,10:35,10:48,,13,,
+121,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado canasta,,1,Salida del vehiculo,10:48,10:49,1,,,
+122,29/05/2026,Bucaramanga,,1,,Sencillo,Estibado suelto,,2,Carga,10:50,10:51,1,,,
+123,29/05/2026,Bucaramanga,,,,Sencillo,,,,Tiempo muerto,10:51,10:59,,8,Falta de Producto,Esperando confirmacion para ingresar nuevs mercancia
+124,29/05/2026,Lebrija,,2,XKG435,Mula,Estibado canasta,,,Llegada vehiculo,11:02,11:06,4,,,
+125,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Preparacion Vehiculo,11:06,11:17,11,,,
+126,29/05/2026,Lebrija,,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:17,11:18,1,,,
+127,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,,Tiempo muerto,11:18,11:22,,4,,
+128,29/05/2026,Lebrija,,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:22,11:23,1,,,
+129,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,,Tiempo muerto,11:23,11:27,,4,Alistamiento de Producto ,Estsn pre alistando pedidos
+130,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,2,Cargue,11:27,11:28,1,,,
+131,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,2,Cargue,11:28,11:29,1,,,
+132,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,2,Cargue,11:29,11:30,1,,,producto pedido del dia anterior debido a solo 1 entrega al d1
+133,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:30,11:31,1,,,
+134,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:31,11:32,1,,,
+135,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:33,11:34,1,,,
+136,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,,Tiempo muerto,11:34,11:38,,4,Alistamiento de Producto ,Se estaba buscando producto de las estanterias
+137,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:38,11:39,1,,,
+138,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:39,11:40,1,,,
+139,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:40,11:41,1,,,
+140,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:41,11:43,2,,,
+141,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,,Tiempo muerto,11:43,11:45,,2,Alistamiento de Producto ,Se estaba buscando producto de las estanterias
+142,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:45,11:46,1,,,
+143,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:46,11:48,2,,,
+144,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:48,11:51,3,,,
+145,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:51,11:52,1,,,
+146,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,2,Cargue,11:52,11:54,2,,,
+147,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,,Tiempo muerto,11:54,11:57,,3,Alistamiento de Producto ,Se estaba buscando producto de las estanterias
+148,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:57,11:58,1,,,
+149,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,3,Cargue,11:58,11:59,1,,,
+150,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Cargue,11:59,12:01,2,,,
+151,29/05/2026,"Lebrija
+",,2,XKG435,Mula,Estibado canasta,,1,Salida del vehiculo,12:01,12:05,4,,,
+152,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,2,Llegada vehiculo,1:35,1:40,5,,,
+153,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,,Tiempo muerto,1:40,2:08,,28,Otro,Alistamiento de vehiculo
+154,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,2,Cargue,2:08,2:12,4,,,
+155,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,,Tiempo muerto,2:12,2:43,,31,Otro,Buscando producto y pegando etiquetas para carga sencillo por completo
+156,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,3,Cargue,2:43,3:10,27,,,"Se trajo todas las cajas de producto etiquetadas, para una mayor eficiencia al organizar"
+157,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,,Tiempo muerto,3:10,3:14,,4,Otro,
+158,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,3,Re organizando cajas,3:15,3:24,9,,,
+159,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,3,Cargue,3:24,3:27,3,,,
+160,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,,Tiempo muerto,3:28,3:35,,7,Falta de Producto,"estan esperando prodcuto, un caso aislado que no se habia visto, de despacho rapido"
+161,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,4,Cargue,3:35,4:03,28,,,
+162,29/05/2026,Barranquilla,,2,TTW543,Sencillo,A piso cajas,,,Salida del vehiculo,4:03,4:06,3,,,
+163,29/05/2026,Cucuta,,2,PRY549,Sencillo,,,,Llegada vehiculo,4:09,4:12,3,,,
+164,29/05/2026,Cucuta,,2,PRY549,Sencillo,,,4,Preparacion Inicial,4:12,4:21,9,,,
+165,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:21,4:22,1,,,
+166,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:22,4:24,2,,,
+167,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:24,4:26,2,,,
+168,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,,Tiempo muerto,4:26,4:31,,5,,
+169,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Remonte canasta,4:31,4:32,1,,,
+170,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:32,4:33,1,,,
+171,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,,Tiempo muerto,4:33,4:35,,2,Re - Estibado,
+172,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:35,4:37,2,,,
+173,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,,Tiempo muerto,4:37,4:42,,5,Alistamiento de Producto ,Bajando producto de estanterias para continuar cargando
+174,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,1,Vinepelando,4:42,4:43,1,,,
+175,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:43,4:45,2,,,
+176,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:45,4:46,1,,,
+177,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,,Tiempo muerto,4:46,4:49,,3,,
+178,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,1,Vinepelando,4:49,4:50,1,,,
+179,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,2,Cargue,4:50,4:51,1,,,
+180,29/05/2026,Cucuta,,2,PRY549,Sencillo,Estibado canasta,,1,Cargue,4:51,4:52,1,,,
+181,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,Estibado suelto,,,Llegada ,11:10,11:15,5,,Otro,Operarios desarollando actividades pendiente dentro de lanza organizando y preparando vehiculo para cargue de canastas y empaque
+182,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,2,Cargue,11:15,11:19,4,,,
+183,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,2,Cargue,11:19,11:23,4,,,
+184,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,11:23,11:34,,11,,
+185,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,2,Cargue,11:34,11:36,2,,,
+186,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,11:36,11:38,,2,,
+187,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,2,Cargue,11:38,11:44,6,,,"Bastante cantidad de producto, se esta cargando manualmente a piso"
+188,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,11:44,12:01,,17,Alistamiento de Producto ,Organizacion de producto para cargue
+189,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,2,Cargue,12:01,12:13,12,,,
+190,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,1,Cargue,12:13,12:20,7,,,
+191,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,12:20,12:27,,7,,Busqueda y organizacion de producto para cargue
+192,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,1,Cargue,12:27,12:31,4,,,
+193,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,1,Cargue,12:31,12:45,14,,,
+194,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,12:45,2:04,,60,Otro,"Descanso de personal, pausa con la carga"
+195,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,2:04,2:12,8,,,
+196,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,2:12,2:20,8,,,
+197,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,2:20,2:26,,6,Otro,Todo el producto se dejo en la entrada del muelle y estan siendo cargando uno a uno por los operarios
+198,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,2:26,2:47,21,,,
+199,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,2:47,2:55,8,,,
+200,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,2:55,2:58,3,,,
+201,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,2:58,3:05,7,,,
+202,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,3:05,3:07,,2,Otro,En espera de operador con producto
+203,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,3:07,3:10,3,,,
+204,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,3:10,3:18,8,,,
+205,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,3:18,3:24,,6,Falta de Producto,
+206,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,3,Cargue,3:24,3:34,10,,,
+207,01/06/2026,Bucaramanga,,3,SUD993,Doble troque ,A piso suelto,,,Tiempo muerto,3:34,3:56,,22,Falta de Producto,Esperando por mas producto 
+208,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Salida del vehiculo,3:56,4:00,4,,,
+209,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Llegada del vehiculo,4:00,4:02,2,,,
+210,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,4:02,4:07,,5,Otro,En espera de operador
+211,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Cargue,4:07,4:08,1,,,
+212,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Cargue,4:08,4:09,1,,,
+213,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,4:09,4:10,,1,Otro,En espera de operador
+214,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:11,4:12,1,,,
+215,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:12,4:13,1,,,
+216,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:14,4:15,1,,,
+217,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:15,4:16,1,,,
+218,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,4:16,4:20,,4,Alistamiento de Producto ,Trayendo mas producto al muelle para la carga
+219,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:20,4:23,3,,,
+220,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:23,4:25,2,,,
+221,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:25,4:31,6,,,
+222,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,4:31,4:33,,2,,
+223,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:33,4:34,1,,,
+224,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:34,4:36,2,,,
+225,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:36,4:37,1,,,
+226,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Salida del vehiculo,4:37,4:38,1,,,
+227,01/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Cargue,4:36,4:38,2,,,
+228,02/06/2026,Bucaramanga,,,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,4:38,4:45,,7,Otro,Se hace pausa por reabastacemiento de producto
+229,02/06/2026,Bucaramanga,,,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,9:00,10:18,,18,Otro,"Se esta esperando el producto para realizar el cargue, se estan realizando labores de aseo en la planta"
+230,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,2,Preparacion del vehiculo,10:18,10:25,7,,,
+231,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Vinipelado,10:25,10:27,2,,,
+232,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,10:27,10:32,5,,,
+233,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Vinipelado,10:32,10:33,1,,,
+234,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Cargue,10:33,10:34,1,,,
+235,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,10:34,10:43,,9,Congestión en Muelles,
+236,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Vinipelado,10:43,10:44,1,,,
+237,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Cargue,10:44,10:46,2,,,
+238,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,10:46,10:52,,6,Alistamiento de Producto ,Busqueda de producto en el stock
+239,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Vinipelado,10:52,10:53,1,,,
+240,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Cargue,10:53,10:54,1,,,
+241,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Cargue,10:54,10:56,2,,,
+242,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,10:56,11:00,,4,Alistamiento de Producto ,Busqueda de producto en el stock
+243,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Vinipelado,11:00,11:01,1,,,
+244,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Cargue,11:01,11:03,2,,,
+245,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,,Tiempo muerto,11:03,11:10,,7,Alistamiento de Producto ,Busqueda de producto en el stock
+246,02/06/2026,Bucaramanga,,1,PTW598,Sencillo,Estibado canasta,,1,Cargue,11:10,11:13,3,,,
+247,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,,Tiempo muerto,11:13,11:32,,18,Falta de Producto,
+248,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,,Llegada vehiculo,11:33,11:32,,,,
+249,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,,Preparacion Inicial,11:32,12:00,28,,,
+250,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,1,Vinipelado,12:00,12:04,4,,,
+251,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,2,Cargue,12:04,12:06,2,,,
+252,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,,Tiempo muerto,12:06,12:09,,3,Alistamiento de Producto ,Organizandno y trayendo producto 
+253,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,2,Cargue,12:09,12:10,1,,,
+254,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,,Tiempo muerto,12:10,12:13,,3,Alistamiento de Producto ,Organizandno y trayendo producto 
+255,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,2,Cargue,12:13,12:14,1,,,
+256,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,2,Cargue,12:14,12:17,3,,,
+257,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,,Tiempo muerto,12:17,1:52,,24,Alistamiento de Producto ,Organizandno y trayendo producto 
+258,02/06/2026,Bogota,,1,,Doble troque,Estibado canasta,,2,Cargue,1:52,2:00,,,,
+,,,,,,,,,,Tiempo muerto,2:00,2:16,,,,
+,,,,,,,,,,Vinipelado,2:16,2:18,,,,
+,,,,,,,,,2,Cargue,2:18,2:22,,,,
+,,,,,,,,,,Tiempo muerto,2:22,2:25,,3,,
+,,,,,,,,,,Vinipelado,2:25,2:27,,,,
+,,,,,,,,,2,Cargue,2:27,2:29,,,,
+,,,,,,,,,,Tiempo muerto,2:29,2:36,,7,,
+,,,,,,,,,,Cargue,2:36,2:37,,,,
+,,,,,,,,,,Cargue,2:37,,,,,
