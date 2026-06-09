@@ -133,15 +133,32 @@ def cargar_datos(file, nombre):
         key = c.lower().strip()
         if key in alias:
             ren[c] = alias[key]
+        # Detección por contenido para 'personas' (tolera '# persona', espacios
+        # extra, etc.) si el match exacto no la encontró
+        elif "persona" in key:
+            ren[c] = "Personas"
     df = df.rename(columns=ren)
+
+    # Si aún no existe la columna Personas, avisar para diagnóstico
+    if "Personas" not in df.columns:
+        st.sidebar.warning(
+            "No se detectó la columna de número de personas. "
+            f"Encabezados encontrados: {list(df.columns)}"
+        )
 
     # Tipos
     df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True, errors="coerce")
     df["IniMin"] = df["HoraInicio"].apply(parse_hora)
     df["FinMin"] = df["HoraFinal"].apply(parse_hora)
     df["TM"] = pd.to_numeric(df.get("TM"), errors="coerce").fillna(0)
-    df["Personas"] = pd.to_numeric(df.get("Personas"), errors="coerce")
-    df["Muelle"] = df["Muelle"].astype(str).str.strip()
+    df["Personas"] = pd.to_numeric(df.get("Personas"), errors="coerce").astype("Int64")
+
+    # Muelle como entero limpio (evita '1.0', '2.0'): a número, luego a entero,
+    # y a texto sin decimales para mostrar y filtrar.
+    muelle_num = pd.to_numeric(df["Muelle"], errors="coerce")
+    df["Muelle"] = muelle_num.apply(
+        lambda x: str(int(x)) if pd.notna(x) else ""
+    ).str.strip()
 
     # Texto limpio para categóricas
     for c in ["Evento", "TipoCargue", "TipoVh", "Causa"]:
@@ -167,39 +184,21 @@ def cargar_datos(file, nombre):
 
 
 # ------------------------------------------------------------------------------
-# SIDEBAR — CARGA DE DATOS Y FILTROS
+# SIDEBAR — FILTROS  ·  Carga de datos directa desde el repositorio
 # ------------------------------------------------------------------------------
-st.sidebar.markdown("## 🥚 Estudio de Tiempos")
-st.sidebar.markdown("### 1. Cargar datos")
-archivo = st.sidebar.file_uploader(
-    "Sube tu CSV o Excel exportado de Sheets",
-    type=["csv", "xlsx", "xls"],
-)
-
-# Si no se sube nada, intentar cargar un CSV que viva en el repo
 import os
 ARCHIVO_REPO = "tiempos_cargue.csv"   # nombre fijo del CSV en el repositorio
 
-if archivo is None and os.path.exists(ARCHIVO_REPO):
-    df = cargar_datos(open(ARCHIVO_REPO, "rb"), ARCHIVO_REPO)
-    st.sidebar.success(f"Usando datos del repo: {ARCHIVO_REPO}")
-elif archivo is None:
-    st.title("Estudio de Tiempos de Cargue · Despachos")
-    st.markdown("""
-    Bienvenida. Este tablero analiza los tiempos de cargue en los muelles para
-    encontrar **dónde se pierde el tiempo** y por qué.
+st.sidebar.markdown("## 🥚 Estudio de Tiempos")
 
-    **Para empezar**, sube tu archivo CSV o Excel desde la barra lateral.
-    Debe tener las columnas de tu plantilla:
-    `Fecha, Muelle, Placa, Evento, # Persona, Hora Inicio, Hora Final,
-    Tipo de Cargue, Tipo Vh, T.M Minutos, Causa`.
-    """)
-    st.info("Mientras no haya archivo, el tablero espera tus datos.")
+if not os.path.exists(ARCHIVO_REPO):
+    st.title("Estudio de Tiempos de Cargue · Despachos")
+    st.error(f"No encuentro el archivo **{ARCHIVO_REPO}** en el repositorio. "
+             "Verifica que el CSV esté subido a GitHub con ese nombre exacto.")
     st.stop()
 
-# Cargar (solo si vino del uploader; si vino del repo ya está cargado arriba)
-if archivo is not None:
-    df = cargar_datos(archivo, archivo.name)
+with open(ARCHIVO_REPO, "rb") as _f:
+    df = cargar_datos(_f, ARCHIVO_REPO)
 
 # Diagnóstico de calidad de datos
 total_reg = len(df)
