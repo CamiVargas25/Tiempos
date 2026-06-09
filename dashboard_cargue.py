@@ -98,6 +98,17 @@ def min_a_hhmm(minutos):
     return f"{h:02d}:{m:02d}"
 
 
+def dur_a_horas(minutos):
+    """Convierte una DURACIÓN en minutos a texto legible en horas.
+    Ej.: 192 -> '3 h 12 min'  ·  45 -> '0 h 45 min'"""
+    if minutos is None or pd.isna(minutos):
+        return ""
+    total = int(round(minutos))
+    h = total // 60
+    m = total % 60
+    return f"{h} h {m} min"
+
+
 @st.cache_data
 def cargar_datos(file, nombre):
     """Lee CSV o Excel y normaliza columnas y tipos."""
@@ -265,19 +276,19 @@ with c1:
     st.markdown(f"""<div class="kpi-card">
         <div class="kpi-label">Tiempo promedio de cargue</div>
         <div class="kpi-value">{prom_total:.0f} min</div>
-        <div class="kpi-sub">de muelle a salida ({min_a_hhmm(prom_total).lstrip('0') or '0:00'} h)</div>
+        <div class="kpi-sub">{dur_a_horas(prom_total)} · de muelle a salida</div>
     </div>""", unsafe_allow_html=True)
 with c2:
     st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['verde']}">
         <div class="kpi-label">Cargue neto (sin tiempo muerto)</div>
         <div class="kpi-value">{prom_neto:.0f} min</div>
-        <div class="kpi-sub">trabajo efectivo de cargue</div>
+        <div class="kpi-sub">{dur_a_horas(prom_neto)} · trabajo efectivo</div>
     </div>""", unsafe_allow_html=True)
 with c3:
     st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['rojo']}">
         <div class="kpi-label">Tiempo muerto por cargue</div>
         <div class="kpi-value">{prom_tm:.0f} min</div>
-        <div class="kpi-sub">demora promedio evitable</div>
+        <div class="kpi-sub">{dur_a_horas(prom_tm)} · demora evitable</div>
     </div>""", unsafe_allow_html=True)
 with c4:
     st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
@@ -302,9 +313,11 @@ with colA:
         g = (dcausa.groupby("Causa")["TM"].sum()
              .sort_values(ascending=False).reset_index())
         g["Acum%"] = g["TM"].cumsum() / g["TM"].sum() * 100
+        g["Horas"] = g["TM"].apply(dur_a_horas)
         fig = go.Figure()
         fig.add_bar(x=g["Causa"], y=g["TM"], name="Minutos perdidos",
-                    marker_color=COL["rojo"])
+                    marker_color=COL["rojo"], customdata=g["Horas"],
+                    hovertemplate="%{x}<br>%{y:.0f} min perdidos (%{customdata})<extra></extra>")
         fig.add_trace(go.Scatter(x=g["Causa"], y=g["Acum%"], name="% acumulado",
                                  yaxis="y2", mode="lines+markers",
                                  line=dict(color=COL["carbon"], width=2)))
@@ -360,12 +373,20 @@ if len(dgantt):
 
     color_map = {"Muelle 1": COL["muelle1"], "Muelle 2": COL["muelle2"],
                  "Muelle 3": COL["muelle3"]}
+    # Orden fijo de muelles: 1, 2, 3 (ascendente por numeral)
+    muelles_presentes = sorted(
+        dgantt["Muelle"].dropna().unique(),
+        key=lambda x: int(x) if str(x).isdigit() else 999
+    )
+    orden_muelles = [f"Muelle {m}" for m in muelles_presentes]
     fig3 = px.timeline(
         dgantt, x_start="Inicio_ts", x_end="Fin_ts", y="MuelleLabel",
         color="MuelleLabel", color_discrete_map=color_map,
+        category_orders={"MuelleLabel": orden_muelles},
         hover_data={"Placa": True, "TM": True, "Causa": True,
                     "TotalMin": True, "MuelleLabel": False},
     )
+    # autorange reversed + orden ascendente => Muelle 1 arriba, 3 abajo
     fig3.update_yaxes(autorange="reversed", title="")
     fig3.update_xaxes(tickformat="%H:%M", title="Hora del día", dtick=2*3600*1000)
     fig3.update_layout(showlegend=False, plot_bgcolor="white", height=320,
@@ -387,10 +408,12 @@ colC, colD = st.columns(2)
 with colC:
     st.subheader("¿Más personas = menos tiempo?")
     dp = df_f.dropna(subset=["Personas"]).copy()
+    dp["Personas"] = dp["Personas"].astype(int)  # de Int64 nullable a int para graficar
     if len(dp):
+        dp["HorasNeto"] = dp["NetoMin"].apply(dur_a_horas)
         fig4 = px.scatter(
             dp, x="Personas", y="NetoMin", color="TipoVh",
-            size="TotalMin", hover_data=["Placa", "Fecha"],
+            size="TotalMin", hover_data=["Placa", "Fecha", "HorasNeto"],
             color_discrete_sequence=[COL["azul"], COL["yema_d"], COL["verde"], COL["rojo"]],
         )
         fig4.update_layout(xaxis_title="# de personas en el cargue",
@@ -416,17 +439,31 @@ with colD:
         gv = (dv.groupby("TipoVh")
               .agg(total=("TotalMin", "mean"), neto=("NetoMin", "mean"),
                    tm=("TM", "mean"), n=("TotalMin", "size")).reset_index())
+        # Orden deseado: Sencillo, Doble Troque, Mula. Tipos fuera de la lista
+        # se ubican al final, conservándose.
+        orden_vh = ["Sencillo", "Doble Troque", "Mula"]
+        gv["_ord"] = gv["TipoVh"].apply(
+            lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
+        gv = gv.sort_values("_ord").reset_index(drop=True)
+        # Texto de horas para el hover
+        horas_neto = gv["neto"].apply(dur_a_horas)
+        horas_tm = gv["tm"].apply(dur_a_horas)
         fig5 = go.Figure()
         fig5.add_bar(x=gv["TipoVh"], y=gv["neto"], name="Cargue neto",
-                     marker_color=COL["verde"])
+                     marker_color=COL["verde"], customdata=horas_neto,
+                     hovertemplate="%{x}<br>Neto: %{y:.0f} min (%{customdata})<extra></extra>")
         fig5.add_bar(x=gv["TipoVh"], y=gv["tm"], name="Tiempo muerto",
-                     marker_color=COL["rojo"])
+                     marker_color=COL["rojo"], customdata=horas_tm,
+                     hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata})<extra></extra>")
         fig5.update_layout(barmode="stack", plot_bgcolor="white", height=360,
                            yaxis_title="Minutos promedio",
+                           xaxis=dict(categoryorder="array",
+                                      categoryarray=gv["TipoVh"].tolist()),
                            legend=dict(orientation="h", y=1.12), margin=dict(t=20))
         st.plotly_chart(fig5, use_container_width=True)
         st.caption("Barra apilada: cuánto del tiempo es trabajo efectivo (verde) vs. "
-                   "demora (rojo), por tipo de vehículo. Normaliza la comparación.")
+                   "demora (rojo), por tipo de vehículo. Pasa el cursor para ver el "
+                   "equivalente en horas. Normaliza la comparación.")
     else:
         st.info("Sin datos de tipo de vehículo.")
 
