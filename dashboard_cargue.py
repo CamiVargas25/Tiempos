@@ -9,7 +9,7 @@
  CÓMO USAR:
    1. pip install streamlit pandas plotly openpyxl
    2. streamlit run dashboard_cargue.py
-   3. Sube tu archivo CSV/Excel exportado de Google Sheets desde la barra lateral.
+   3. Coloca tu archivo 'tiempos_cargue.csv' en la misma carpeta / repositorio.
 
  ESTRUCTURA ESPERADA DEL ARCHIVO (columnas):
    Fecha | Muelle | Placa | Evento | # Persona | Hora Inicio |
@@ -340,15 +340,24 @@ with colB:
         g2 = (dcausa.groupby("Causa")
               .agg(prom=("TM", "mean"), n=("TM", "size"))
               .sort_values("prom", ascending=True).reset_index())
+        # Etiqueta clara al final de cada barra: minutos promedio + nº de veces
+        g2["etiqueta"] = g2.apply(
+            lambda r: f"{r['prom']:.0f} min · {int(r['n'])}×", axis=1)
         fig2 = px.bar(g2, x="prom", y="Causa", orientation="h",
-                      text=g2["prom"].round(0), color_discrete_sequence=[COL["yema_d"]])
-        fig2.update_traces(textposition="outside")
+                      text=g2["etiqueta"], color_discrete_sequence=[COL["yema_d"]])
+        fig2.update_traces(textposition="outside",
+                           hovertemplate="%{y}<br>%{x:.0f} min por evento<extra></extra>")
+        # Dar aire al eje X para que la etiqueta no se corte
+        xmax = g2["prom"].max() * 1.35
         fig2.update_layout(xaxis_title="Minutos promedio por evento",
+                           xaxis=dict(range=[0, xmax]),
                            yaxis_title="", plot_bgcolor="white", height=380,
                            margin=dict(t=30))
         st.plotly_chart(fig2, use_container_width=True)
-        st.caption("Frecuencia (Pareto) vs. **severidad** (aquí): una causa rara "
-                   "pero muy larga merece atención distinta a una frecuente y corta.")
+        st.caption("Mientras el Pareto mide el **total** de minutos perdidos por causa "
+                   "(impacto), aquí ves cuánto dura **cada vez** que ocurre (severidad), "
+                   "con el nº de veces que pasó. Si todas las barras son parecidas, lo "
+                   "que diferencia el impacto es la frecuencia, no la duración.")
 
 
 # ------------------------------------------------------------------------------
@@ -455,13 +464,14 @@ with colD:
         gv["_ord"] = gv["TipoVh"].apply(
             lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
         gv = gv.sort_values("_ord").reset_index(drop=True)
-        # % de participación: cuántos cargues de cada tipo sobre el total del periodo
-        gv["pct"] = gv["n"] / gv["n"].sum() * 100
+        # % de tiempo muerto: qué parte del tiempo total en muelle es demora,
+        # por tipo de vehículo (tm / (neto + tm))
+        gv["total_apilado"] = gv["neto"] + gv["tm"]
+        gv["pct_muerto"] = (gv["tm"] / gv["total_apilado"] * 100).where(
+            gv["total_apilado"] > 0, 0)
         # Texto de horas para el hover
         horas_neto = gv["neto"].apply(dur_a_horas)
         horas_tm = gv["tm"].apply(dur_a_horas)
-        # Etiqueta de participación sobre la barra (encima del total apilado)
-        gv["total_apilado"] = gv["neto"] + gv["tm"]
         fig5 = go.Figure()
         fig5.add_bar(x=gv["TipoVh"], y=gv["neto"], name="Cargue neto",
                      marker_color=COL["verde"], customdata=horas_neto,
@@ -469,11 +479,11 @@ with colD:
         fig5.add_bar(x=gv["TipoVh"], y=gv["tm"], name="Tiempo muerto",
                      marker_color=COL["rojo"], customdata=horas_tm,
                      hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata})<extra></extra>")
-        # Anotaciones de % participación + nº de cargues encima de cada barra
+        # Anotación encima de cada barra: % de tiempo muerto + nº de cargues
         for _, r in gv.iterrows():
             fig5.add_annotation(
                 x=r["TipoVh"], y=r["total_apilado"],
-                text=f"<b>{r['pct']:.0f}%</b><br>{int(r['n'])} cargues",
+                text=f"<b>{r['pct_muerto']:.0f}% muerto</b><br>{int(r['n'])} cargues",
                 showarrow=False, yshift=18, font=dict(size=11, color=COL["carbon"]))
         fig5.update_layout(barmode="stack", plot_bgcolor="white", height=360,
                            yaxis_title="Minutos promedio",
@@ -482,8 +492,8 @@ with colD:
                            legend=dict(orientation="h", y=1.12), margin=dict(t=40))
         st.plotly_chart(fig5, use_container_width=True)
         st.caption("Altura = minutos promedio (verde: trabajo efectivo, rojo: demora). "
-                   "El **% encima de cada barra** es la participación de ese tipo de "
-                   "vehículo sobre el total de cargues del periodo. Pasa el cursor para horas.")
+                   "El **% encima de cada barra** es qué proporción del tiempo en muelle "
+                   "es tiempo muerto, para ese tipo de vehículo. Pasa el cursor para horas.")
     else:
         st.info("Sin datos de tipo de vehículo.")
 
@@ -551,4 +561,4 @@ with st.expander("Ver detalle de registros analizados"):
 
 st.markdown("---")
 st.caption("Estudio de tiempos · Área de despachos. Actualiza los datos "
-           "reemplazando el archivo cargado en la barra lateral.")
+           "reemplazando el archivo tiempos_cargue.csv en el repositorio de GitHub.")
