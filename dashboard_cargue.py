@@ -408,27 +408,37 @@ colC, colD = st.columns(2)
 with colC:
     st.subheader("¿Más personas = menos tiempo?")
     dp = df_f.dropna(subset=["Personas"]).copy()
-    dp["Personas"] = dp["Personas"].astype(int)  # de Int64 nullable a int para graficar
+    dp["Personas"] = dp["Personas"].astype(int)
     if len(dp):
-        dp["HorasNeto"] = dp["NetoMin"].apply(dur_a_horas)
-        fig4 = px.scatter(
-            dp, x="Personas", y="NetoMin", color="TipoVh",
-            size="TotalMin", hover_data=["Placa", "Fecha", "HorasNeto"],
-            color_discrete_sequence=[COL["azul"], COL["yema_d"], COL["verde"], COL["rojo"]],
+        # Promedio de tiempo neto y nº de cargues por cantidad de personas
+        agg = (dp.groupby("Personas")
+               .agg(neto=("NetoMin", "mean"), n=("NetoMin", "size"))
+               .reset_index().sort_values("Personas"))
+        agg["Personas_lbl"] = agg["Personas"].astype(str) + " personas"
+        agg["Horas"] = agg["neto"].apply(dur_a_horas)
+
+        fig4 = go.Figure()
+        fig4.add_bar(
+            x=agg["Personas_lbl"], y=agg["neto"],
+            marker_color=COL["azul"], customdata=agg["Horas"],
+            hovertemplate="%{x}<br>Promedio neto: %{y:.0f} min (%{customdata})<extra></extra>",
         )
-        fig4.update_layout(xaxis_title="# de personas en el cargue",
-                           yaxis_title="Cargue neto (min)",
-                           plot_bgcolor="white", height=360, margin=dict(t=20),
-                           legend=dict(orientation="h", y=1.12))
-        # Promedio neto por nº de personas (tendencia)
-        med = dp.groupby("Personas")["NetoMin"].mean().reset_index()
-        fig4.add_trace(go.Scatter(x=med["Personas"], y=med["NetoMin"],
-                                  mode="lines+markers", name="Promedio",
-                                  line=dict(color=COL["carbon"], dash="dash")))
+        # Etiqueta encima: minutos promedio + nº de cargues que respaldan la barra
+        for _, r in agg.iterrows():
+            fig4.add_annotation(
+                x=r["Personas_lbl"], y=r["neto"],
+                text=f"<b>{r['neto']:.0f} min</b><br>{int(r['n'])} cargues",
+                showarrow=False, yshift=16, font=dict(size=11, color=COL["carbon"]))
+        fig4.update_layout(
+            plot_bgcolor="white", height=360, margin=dict(t=40),
+            yaxis_title="Cargue neto promedio (min)", xaxis_title="",
+            showlegend=False)
         st.plotly_chart(fig4, use_container_width=True)
-        st.caption("Si la línea de promedio no baja al aumentar personas, agregar "
-                   "gente **no** está reduciendo el tiempo: el cuello de botella está "
-                   "en otra parte (producto, espacio, equipo).")
+        st.caption("Cada barra es el **tiempo neto promedio** de cargue según cuántas "
+                   "personas trabajaron. Si las barras **no bajan** al aumentar personas, "
+                   "sumar gente no reduce el tiempo: el cuello de botella está en otra "
+                   "parte (producto, espacio, equipo). El **nº de cargues** indica qué "
+                   "tan confiable es cada barra: pocas observaciones = tómalo con cautela.")
     else:
         st.info("Sin datos de número de personas.")
 
@@ -445,9 +455,13 @@ with colD:
         gv["_ord"] = gv["TipoVh"].apply(
             lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
         gv = gv.sort_values("_ord").reset_index(drop=True)
+        # % de participación: cuántos cargues de cada tipo sobre el total del periodo
+        gv["pct"] = gv["n"] / gv["n"].sum() * 100
         # Texto de horas para el hover
         horas_neto = gv["neto"].apply(dur_a_horas)
         horas_tm = gv["tm"].apply(dur_a_horas)
+        # Etiqueta de participación sobre la barra (encima del total apilado)
+        gv["total_apilado"] = gv["neto"] + gv["tm"]
         fig5 = go.Figure()
         fig5.add_bar(x=gv["TipoVh"], y=gv["neto"], name="Cargue neto",
                      marker_color=COL["verde"], customdata=horas_neto,
@@ -455,15 +469,21 @@ with colD:
         fig5.add_bar(x=gv["TipoVh"], y=gv["tm"], name="Tiempo muerto",
                      marker_color=COL["rojo"], customdata=horas_tm,
                      hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata})<extra></extra>")
+        # Anotaciones de % participación + nº de cargues encima de cada barra
+        for _, r in gv.iterrows():
+            fig5.add_annotation(
+                x=r["TipoVh"], y=r["total_apilado"],
+                text=f"<b>{r['pct']:.0f}%</b><br>{int(r['n'])} cargues",
+                showarrow=False, yshift=18, font=dict(size=11, color=COL["carbon"]))
         fig5.update_layout(barmode="stack", plot_bgcolor="white", height=360,
                            yaxis_title="Minutos promedio",
                            xaxis=dict(categoryorder="array",
                                       categoryarray=gv["TipoVh"].tolist()),
-                           legend=dict(orientation="h", y=1.12), margin=dict(t=20))
+                           legend=dict(orientation="h", y=1.12), margin=dict(t=40))
         st.plotly_chart(fig5, use_container_width=True)
-        st.caption("Barra apilada: cuánto del tiempo es trabajo efectivo (verde) vs. "
-                   "demora (rojo), por tipo de vehículo. Pasa el cursor para ver el "
-                   "equivalente en horas. Normaliza la comparación.")
+        st.caption("Altura = minutos promedio (verde: trabajo efectivo, rojo: demora). "
+                   "El **% encima de cada barra** es la participación de ese tipo de "
+                   "vehículo sobre el total de cargues del periodo. Pasa el cursor para horas.")
     else:
         st.info("Sin datos de tipo de vehículo.")
 
@@ -487,6 +507,33 @@ if etiqueta_periodo == "Histórico":
                        legend=dict(orientation="h", y=1.12), margin=dict(t=20))
     st.plotly_chart(fig6, use_container_width=True)
     st.caption("Permite ver si el problema es estable o se concentra en ciertos días.")
+
+    # --- Composición diaria de cargues por tipo de vehículo (100% apilado) ---
+    st.subheader("Proporción diaria de cargues por tipo de vehículo")
+    dvd = df_f.dropna(subset=["TipoVh"]).copy()
+    if len(dvd):
+        comp = (dvd.groupby([dvd["Fecha"].dt.date, "TipoVh"])
+                .size().reset_index(name="n"))
+        comp = comp.rename(columns={"Fecha": "Dia"})
+        # Total por día para sacar el %
+        tot_dia = comp.groupby("Dia")["n"].transform("sum")
+        comp["pct"] = comp["n"] / tot_dia * 100
+        orden_vh = ["Sencillo", "Doble Troque", "Mula"]
+        color_vh = {"Sencillo": COL["yema_d"], "Doble Troque": COL["verde"],
+                    "Mula": COL["azul"]}
+        fig7 = px.bar(comp, x="Dia", y="pct", color="TipoVh",
+                      category_orders={"TipoVh": orden_vh},
+                      color_discrete_map=color_vh,
+                      custom_data=["TipoVh", "n"])
+        fig7.update_traces(
+            hovertemplate="%{x}<br>%{customdata[0]}: %{y:.0f}% (%{customdata[1]} cargues)<extra></extra>")
+        fig7.update_layout(barmode="stack", plot_bgcolor="white", height=320,
+                           yaxis=dict(title="% de cargues del día", range=[0, 100]),
+                           legend=dict(orientation="h", y=1.12), margin=dict(t=20))
+        st.plotly_chart(fig7, use_container_width=True)
+        st.caption("Cada barra suma 100%: muestra cómo se reparten los cargues de cada "
+                   "día entre tipos de vehículo. Sirve para ver si la mezcla cambia y si "
+                   "los días más lentos coinciden con más mulas o doble troques.")
 
 
 # ------------------------------------------------------------------------------
