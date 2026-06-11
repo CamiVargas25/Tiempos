@@ -361,52 +361,126 @@ with colB:
 
 
 # ------------------------------------------------------------------------------
-# FILA 2: DIAGRAMA DE OCUPACIÓN DE MUELLES (estilo Gantt)
+# FILA 2: ANÁLISIS DE TIEMPO VACÍO DE MUELLES (ociosidad)
 # ------------------------------------------------------------------------------
-st.subheader("Ocupación de muelles por franja horaria")
-st.caption("Cada barra = un cargue ocupando un muelle, desde Hora Inicio hasta "
-           "Hora Final. Sirve para ver saturación, solapamientos y huecos.")
+st.subheader("Análisis de tiempo vacío de muelles")
+st.markdown(
+    "Mide la **ociosidad**: cuánto tiempo los muelles operativos (1 y 2) están "
+    "desocupados entre un cargue y el siguiente. El muelle 3 se excluye porque solo "
+    "se habilita por excepción (plataforma en reparación)."
+)
 
-dgantt = df_f.dropna(subset=["IniMin", "FinMin"]).copy()
-if len(dgantt):
-    # Construir timestamps ficticios sobre una fecha base para que plotly dibuje horas
-    base = pd.Timestamp("2000-01-01")
-    def to_ts(row, col):
-        m = row[col]
-        if row["FinMin"] < row["IniMin"] and col == "FinMin":
-            m += 24 * 60
-        return base + pd.Timedelta(minutes=m)
-    dgantt["Inicio_ts"] = dgantt.apply(lambda r: to_ts(r, "IniMin"), axis=1)
-    dgantt["Fin_ts"] = dgantt.apply(lambda r: to_ts(r, "FinMin"), axis=1)
-    dgantt["MuelleLabel"] = "Muelle " + dgantt["Muelle"].astype(str)
+# --- Cálculo de huecos entre cargues consecutivos por muelle y día ---
+MUELLES_OP = ["1", "2"]   # muelles de operación normal
+dvac = df_f[df_f["Muelle"].isin(MUELLES_OP)].dropna(subset=["IniMin", "FinMin"]).copy()
 
-    color_map = {"Muelle 1": COL["muelle1"], "Muelle 2": COL["muelle2"],
-                 "Muelle 3": COL["muelle3"]}
-    # Orden fijo de muelles: 1, 2, 3 (ascendente por numeral)
-    muelles_presentes = sorted(
-        dgantt["Muelle"].dropna().unique(),
-        key=lambda x: int(x) if str(x).isdigit() else 999
-    )
-    orden_muelles = [f"Muelle {m}" for m in muelles_presentes]
-    fig3 = px.timeline(
-        dgantt, x_start="Inicio_ts", x_end="Fin_ts", y="MuelleLabel",
-        color="MuelleLabel", color_discrete_map=color_map,
-        category_orders={"MuelleLabel": orden_muelles},
-        hover_data={"Placa": True, "TM": True, "Causa": True,
-                    "TotalMin": True, "MuelleLabel": False},
-    )
-    # autorange reversed + orden ascendente => Muelle 1 arriba, 3 abajo
-    fig3.update_yaxes(autorange="reversed", title="")
-    fig3.update_xaxes(tickformat="%H:%M", title="Hora del día", dtick=2*3600*1000)
-    fig3.update_layout(showlegend=False, plot_bgcolor="white", height=320,
-                       margin=dict(t=20))
-    st.plotly_chart(fig3, use_container_width=True)
-    if etiqueta_periodo == "Histórico":
-        st.caption("⚠️ En modo histórico se superponen todos los días sobre un mismo "
-                   "eje de 24 h. Para leer la ocupación real de un turno, filtra por "
-                   "una **fecha específica** en la barra lateral.")
+# Normalizar fin que cruza medianoche para el cálculo de huecos
+dvac["FinMinAdj"] = dvac.apply(
+    lambda r: r["FinMin"] + 24*60 if r["FinMin"] < r["IniMin"] else r["FinMin"], axis=1)
+dvac["Fecha_d"] = dvac["Fecha"].dt.date
+
+huecos = []
+for (fecha, muelle), g in dvac.groupby(["Fecha_d", "Muelle"]):
+    g = g.sort_values("IniMin")
+    fins = g["FinMinAdj"].tolist()
+    inis = g["IniMin"].tolist()
+    for i in range(len(g) - 1):
+        gap = inis[i + 1] - fins[i]
+        if gap > 0:   # solo huecos reales (ignora solapamientos o registros raros)
+            huecos.append({"Fecha": fecha, "Muelle": muelle,
+                           "FinAnt": fins[i], "IniSig": inis[i + 1], "GapMin": gap})
+huecos_df = pd.DataFrame(huecos)
+
+# Total vacío por día (suma de huecos de muelles 1 y 2 en cada día)
+if len(huecos_df):
+    vac_dia = huecos_df.groupby("Fecha")["GapMin"].sum()
+    prom_vac_dia = vac_dia.mean()
+    n_huecos = len(huecos_df)
+    prom_por_hueco = huecos_df["GapMin"].mean()
 else:
-    st.info("No hay registros con horas válidas para graficar la ocupación.")
+    prom_vac_dia = 0
+    n_huecos = 0
+    prom_por_hueco = 0
+
+# --- Minutos con AMBOS muelles operativos vacíos a la vez (capacidad parada) ---
+def ambos_vacios_dia(g):
+    """Minutos dentro de la ventana operativa del día sin ningún muelle ocupado."""
+    ini_op = int(g["IniMin"].min())
+    fin_op = int(g["FinMinAdj"].max())
+    if fin_op <= ini_op:
+        return 0
+    ocupado = [False] * (fin_op - ini_op)
+    for _, r in g.iterrows():
+        for t in range(int(r["IniMin"]), int(r["FinMinAdj"])):
+            if 0 <= t - ini_op < len(ocupado):
+                ocupado[t - ini_op] = True
+    return sum(1 for o in ocupado if not o)
+
+if len(dvac):
+    ambos_por_dia = dvac.groupby("Fecha_d").apply(ambos_vacios_dia)
+    prom_ambos = ambos_por_dia.mean()
+else:
+    prom_ambos = 0
+
+# --- KPIs de ociosidad (fila propia, separada de los KPIs de tiempo de cargue) ---
+v1, v2, v3 = st.columns(3)
+with v1:
+    st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['gris']}">
+        <div class="kpi-label">Ociosidad total por día (muelles 1+2)</div>
+        <div class="kpi-value">{prom_vac_dia:.0f} min</div>
+        <div class="kpi-sub">{dur_a_horas(prom_vac_dia)} · capacidad de muelle desperdiciada al día</div>
+    </div>""", unsafe_allow_html=True)
+with v2:
+    st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['rojo']}">
+        <div class="kpi-label">Ambos muelles parados a la vez</div>
+        <div class="kpi-value">{prom_ambos:.0f} min</div>
+        <div class="kpi-sub">{dur_a_horas(prom_ambos)} · promedio diario sin ningún cargue activo</div>
+    </div>""", unsafe_allow_html=True)
+with v3:
+    st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
+        <div class="kpi-label">Espera promedio entre cargues</div>
+        <div class="kpi-value">{prom_por_hueco:.0f} min</div>
+        <div class="kpi-sub">{n_huecos} huecos · tiempo en llegar el siguiente camión</div>
+    </div>""", unsafe_allow_html=True)
+
+# --- Detalle visual: huecos por día y muelle ---
+if len(huecos_df):
+    st.markdown("<br>", unsafe_allow_html=True)
+    colV1, colV2 = st.columns([3, 2])
+    with colV1:
+        st.markdown("**Ociosidad por día**")
+        vac_dia_df = vac_dia.reset_index()
+        vac_dia_df["Horas"] = vac_dia_df["GapMin"].apply(dur_a_horas)
+        figv = px.bar(vac_dia_df, x="Fecha", y="GapMin",
+                      color_discrete_sequence=[COL["gris"]],
+                      custom_data=["Horas"])
+        figv.update_traces(
+            hovertemplate="%{x}<br>%{y:.0f} min vacíos (%{customdata[0]})<extra></extra>")
+        figv.update_layout(plot_bgcolor="white", height=300,
+                           yaxis_title="Minutos vacíos (muelles 1+2)",
+                           xaxis_title="", margin=dict(t=20))
+        st.plotly_chart(figv, use_container_width=True)
+    with colV2:
+        st.markdown("**Huecos individuales detectados**")
+        tabla_h = huecos_df.copy()
+        tabla_h["Fecha"] = pd.to_datetime(tabla_h["Fecha"]).dt.strftime("%d/%m")
+        tabla_h["Desde"] = tabla_h["FinAnt"].apply(lambda m: min_a_hhmm(m % (24*60)))
+        tabla_h["Hasta"] = tabla_h["IniSig"].apply(lambda m: min_a_hhmm(m % (24*60)))
+        tabla_h["Vacío"] = tabla_h["GapMin"].astype(int).astype(str) + " min"
+        st.dataframe(
+            tabla_h[["Fecha", "Muelle", "Desde", "Hasta", "Vacío"]],
+            use_container_width=True, hide_index=True, height=300)
+
+    st.caption(
+        "**Ociosidad total por día**: suma de todos los huecos de los muelles 1 y 2 "
+        "(mide capacidad desperdiciada). **Ambos parados a la vez**: minutos en que "
+        "ningún muelle operativo tenía cargue activo (cuello de botella crítico, suele "
+        "señalar falta de producto o de camiones). **Espera entre cargues**: cuánto "
+        "tarda en llegar el siguiente camión cuando un muelle se desocupa.")
+else:
+    st.info("No hay suficientes cargues consecutivos en los muelles 1 y 2 para "
+            "calcular tiempos vacíos en este periodo. Se necesitan al menos dos "
+            "cargues en el mismo muelle y día.")
 
 
 # ------------------------------------------------------------------------------
