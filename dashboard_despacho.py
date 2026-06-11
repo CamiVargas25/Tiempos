@@ -395,12 +395,8 @@ huecos_df = pd.DataFrame(huecos)
 if len(huecos_df):
     vac_dia = huecos_df.groupby("Fecha")["GapMin"].sum()
     prom_vac_dia = vac_dia.mean()
-    n_huecos = len(huecos_df)
-    prom_por_hueco = huecos_df["GapMin"].mean()
 else:
     prom_vac_dia = 0
-    n_huecos = 0
-    prom_por_hueco = 0
 
 # --- Minutos con AMBOS muelles operativos vacíos a la vez (capacidad parada) ---
 def ambos_vacios_dia(g):
@@ -423,7 +419,7 @@ else:
     prom_ambos = 0
 
 # --- KPIs de ociosidad (fila propia, separada de los KPIs de tiempo de cargue) ---
-v1, v2, v3 = st.columns(3)
+v1, v2 = st.columns(2)
 with v1:
     st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['gris']}">
         <div class="kpi-label">Ociosidad total por día (muelles 1+2)</div>
@@ -435,12 +431,6 @@ with v2:
         <div class="kpi-label">Ambos muelles parados a la vez</div>
         <div class="kpi-value">{prom_ambos:.0f} min</div>
         <div class="kpi-sub">{dur_a_horas(prom_ambos)} · promedio diario sin ningún cargue activo</div>
-    </div>""", unsafe_allow_html=True)
-with v3:
-    st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
-        <div class="kpi-label">Espera promedio entre cargues</div>
-        <div class="kpi-value">{prom_por_hueco:.0f} min</div>
-        <div class="kpi-sub">{n_huecos} huecos · tiempo en llegar el siguiente camión</div>
     </div>""", unsafe_allow_html=True)
 
 # --- Detalle visual: huecos por día y muelle ---
@@ -475,8 +465,8 @@ if len(huecos_df):
         "**Ociosidad total por día**: suma de todos los huecos de los muelles 1 y 2 "
         "(mide capacidad desperdiciada). **Ambos parados a la vez**: minutos en que "
         "ningún muelle operativo tenía cargue activo (cuello de botella crítico, suele "
-        "señalar falta de producto o de camiones). **Espera entre cargues**: cuánto "
-        "tarda en llegar el siguiente camión cuando un muelle se desocupa.")
+        "señalar falta de producto o de camiones). La tabla de la derecha muestra cada "
+        "hueco individual con su duración real.")
 else:
     st.info("No hay suficientes cargues consecutivos en los muelles 1 y 2 para "
             "calcular tiempos vacíos en este periodo. Se necesitan al menos dos "
