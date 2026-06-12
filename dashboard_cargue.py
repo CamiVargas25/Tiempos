@@ -138,6 +138,8 @@ def cargar_datos(file, nombre):
         "t.m minutos": "TM", "tm minutos": "TM", "t.m. minutos": "TM",
         "tiempo muerto": "TM", "t.m minuto": "TM", "t.m minutos ": "TM",
         "causa": "Causa",
+        "cantidad": "Cantidad", "cantidad cargada": "Cantidad",
+        "canastas": "Cantidad", "unidades": "Cantidad", "cajas": "Cantidad",
     }
     ren = {}
     for c in df.columns:
@@ -163,6 +165,8 @@ def cargar_datos(file, nombre):
     df["FinMin"] = df["HoraFinal"].apply(parse_hora)
     df["TM"] = pd.to_numeric(df.get("TM"), errors="coerce").fillna(0)
     df["Personas"] = pd.to_numeric(df.get("Personas"), errors="coerce").astype("Int64")
+    # Cantidad cargada (opcional): si no existe la columna, queda como NaN
+    df["Cantidad"] = pd.to_numeric(df.get("Cantidad"), errors="coerce")
 
     # Muelle como entero limpio (evita '1.0', '2.0'): a número, luego a entero,
     # y a texto sin decimales para mostrar y filtrar.
@@ -190,6 +194,10 @@ def cargar_datos(file, nombre):
     df["NetoMin"] = df["TotalMin"] - df["TM"]
     df.loc[df["NetoMin"] < 0, "NetoMin"] = 0  # protección por TM mal capturado
     df["PctMuerto"] = (df["TM"] / df["TotalMin"] * 100).where(df["TotalMin"] > 0)
+
+    # Métricas de productividad por unidad (solo si hay Cantidad > 0)
+    df["MinNetoPorUnidad"] = (df["NetoMin"] / df["Cantidad"]).where(df["Cantidad"] > 0)
+    df["UnidadesPorHora"] = (df["Cantidad"] / (df["NetoMin"] / 60)).where(df["NetoMin"] > 0)
 
     return df
 
@@ -564,61 +572,130 @@ else:
 
 
 # ------------------------------------------------------------------------------
-# FILA 3: TIEMPO DE CARGUE POR TIPO DE VEHÍCULO
+# FILA 3: CARGUE NETO PROMEDIO POR TIPO DE VEHÍCULO
 # ------------------------------------------------------------------------------
-# Excluir cargues que terminan después de las 17:30: su tiempo muerto (barra roja)
-# no es confiable porque quien registra suele retirarse a esa hora.
+# Excluir cargues que terminan después de las 17:30: su tiempo muerto no es
+# confiable porque quien registra suele retirarse a esa hora.
 LIMITE_REGISTRO = 17 * 60 + 30   # 17:30 en minutos desde medianoche
 dv_all = df_f.dropna(subset=["TipoVh"])
 dv = dv_all[dv_all["FinMin"].notna() & (dv_all["FinMin"] <= LIMITE_REGISTRO)]
 excluidos_vh = len(dv_all) - len(dv)
 if True:  # bloque de sección (mantiene indentación del contenido)
-    st.subheader("Tiempo de cargue por tipo de vehículo")
+    st.subheader("Cargue neto promedio por tipo de vehículo")
     if excluidos_vh > 0:
         st.caption(f"ℹ️ Se excluyeron {excluidos_vh} cargue(s) que finalizaron después "
                    "de las 17:30, porque su tiempo muerto puede no ser confiable.")
     if len(dv):
         gv = (dv.groupby("TipoVh")
-              .agg(total=("TotalMin", "mean"), neto=("NetoMin", "mean"),
-                   tm=("TM", "mean"), n=("TotalMin", "size")).reset_index())
-        # Orden deseado: Sencillo, Doble Troque, Mula. Tipos fuera de la lista
-        # se ubican al final, conservándose.
+              .agg(neto=("NetoMin", "mean"), n=("NetoMin", "size")).reset_index())
+        # Orden deseado: Sencillo, Doble Troque, Mula. Tipos fuera de la lista al final.
         orden_vh = ["Sencillo", "Doble Troque", "Mula"]
         gv["_ord"] = gv["TipoVh"].apply(
             lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
         gv = gv.sort_values("_ord").reset_index(drop=True)
-        # % de tiempo muerto: qué parte del tiempo total en muelle es demora,
-        # por tipo de vehículo (tm / (neto + tm))
-        gv["total_apilado"] = gv["neto"] + gv["tm"]
-        gv["pct_muerto"] = (gv["tm"] / gv["total_apilado"] * 100).where(
-            gv["total_apilado"] > 0, 0)
-        # Texto de horas para el hover
-        horas_neto = gv["neto"].apply(dur_a_horas)
-        horas_tm = gv["tm"].apply(dur_a_horas)
+        gv["Horas"] = gv["neto"].apply(dur_a_horas)
         fig5 = go.Figure()
-        fig5.add_bar(x=gv["TipoVh"], y=gv["neto"], name="Cargue neto",
-                     marker_color=COL["verde"], customdata=horas_neto,
-                     hovertemplate="%{x}<br>Neto: %{y:.0f} min (%{customdata})<extra></extra>")
-        fig5.add_bar(x=gv["TipoVh"], y=gv["tm"], name="Tiempo muerto",
-                     marker_color=COL["rojo"], customdata=horas_tm,
-                     hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata})<extra></extra>")
-        # Anotación encima de cada barra: % de tiempo muerto + nº de cargues
+        fig5.add_bar(x=gv["TipoVh"], y=gv["neto"], marker_color=COL["verde"],
+                     customdata=gv["Horas"],
+                     hovertemplate="%{x}<br>Neto promedio: %{y:.0f} min (%{customdata})<extra></extra>")
+        # Etiqueta encima de cada barra: minutos promedio + nº de cargues
         for _, r in gv.iterrows():
             fig5.add_annotation(
-                x=r["TipoVh"], y=r["total_apilado"],
-                text=f"<b>{r['pct_muerto']:.0f}% muerto</b><br>{int(r['n'])} cargues",
-                showarrow=False, yshift=18, font=dict(size=11, color=COL["carbon"]))
-        fig5.update_layout(barmode="stack", plot_bgcolor="white", height=360,
-                           yaxis_title="Minutos promedio",
+                x=r["TipoVh"], y=r["neto"],
+                text=f"<b>{r['neto']:.0f} min</b><br>{int(r['n'])} cargues",
+                showarrow=False, yshift=16, font=dict(size=11, color=COL["carbon"]))
+        fig5.update_layout(plot_bgcolor="white", height=360, margin=dict(t=40),
+                           yaxis_title="Cargue neto promedio (min)", xaxis_title="",
                            xaxis=dict(categoryorder="array",
                                       categoryarray=gv["TipoVh"].tolist()),
-                           legend=dict(orientation="h", y=1.12), margin=dict(t=40))
+                           showlegend=False)
         st.plotly_chart(fig5, use_container_width=True)
-        st.caption("Altura = minutos promedio (verde: trabajo efectivo, rojo: demora). "
-                   "El **% encima de cada barra** es qué proporción del tiempo en muelle "
-                   "es tiempo muerto, para ese tipo de vehículo. Pasa el cursor para horas.")
+        st.caption("Tiempo de trabajo efectivo de cargue (sin tiempo muerto) promedio "
+                   "por tipo de vehículo. El nº de cargues indica qué tan confiable es "
+                   "cada barra: con pocos cargues, tómalo como exploratorio.")
     else:
         st.info("Sin datos de tipo de vehículo.")
+
+
+# ------------------------------------------------------------------------------
+# FILA 3b: PRODUCTIVIDAD POR UNIDAD CARGADA (solo si hay datos de Cantidad)
+# ------------------------------------------------------------------------------
+dprod = df_f[df_f["Cantidad"].notna() & (df_f["Cantidad"] > 0)
+             & df_f["NetoMin"].notna() & (df_f["NetoMin"] > 0)].copy()
+# Aplicar también el filtro de las 17:30 (tiempo neto depende de tiempo muerto)
+dprod = dprod[dprod["FinMin"].notna() & (dprod["FinMin"] <= LIMITE_REGISTRO)]
+
+if len(dprod):
+    st.subheader("Productividad por unidad cargada")
+    st.markdown(
+        "Al incorporar la **cantidad cargada**, el análisis pasa de medir *cuánto tarda* "
+        "a medir *qué tan eficiente es* el cargue, normalizando el tamaño del pedido."
+    )
+
+    # KPI: minutos netos por unidad (global) y unidades por hora (global)
+    min_unidad = dprod["NetoMin"].sum() / dprod["Cantidad"].sum()
+    und_hora = dprod["Cantidad"].sum() / (dprod["NetoMin"].sum() / 60)
+    p1, p2 = st.columns(2)
+    with p1:
+        st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['verde']}">
+            <div class="kpi-label">Minutos por unidad (cargue neto)</div>
+            <div class="kpi-value">{min_unidad:.1f} min</div>
+            <div class="kpi-sub">tiempo efectivo de cargue por unidad</div>
+        </div>""", unsafe_allow_html=True)
+    with p2:
+        st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
+            <div class="kpi-label">Ritmo de cargue</div>
+            <div class="kpi-value">{und_hora:.0f} und/h</div>
+            <div class="kpi-sub">unidades cargadas por hora de trabajo efectivo</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    colP1, colP2 = st.columns(2)
+
+    # Minutos por unidad por tipo de vehículo (la comparación JUSTA)
+    with colP1:
+        st.markdown("**Minutos por unidad, por tipo de vehículo**")
+        gp = (dprod.groupby("TipoVh")
+              .apply(lambda x: x["NetoMin"].sum() / x["Cantidad"].sum())
+              .reset_index(name="min_und"))
+        gp["n"] = dprod.groupby("TipoVh").size().values
+        orden_vh = ["Sencillo", "Doble Troque", "Mula"]
+        gp["_ord"] = gp["TipoVh"].apply(
+            lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
+        gp = gp.sort_values("_ord")
+        figp = go.Figure()
+        figp.add_bar(x=gp["TipoVh"], y=gp["min_und"], marker_color=COL["yema_d"],
+                     text=gp["min_und"].round(1).astype(str) + " min",
+                     textposition="outside")
+        figp.update_layout(plot_bgcolor="white", height=320, margin=dict(t=30),
+                           yaxis_title="Minutos netos por unidad", xaxis_title="",
+                           showlegend=False)
+        st.plotly_chart(figp, use_container_width=True)
+        st.caption("La comparación justa entre vehículos: ya no es 'cuál tarda más' "
+                   "sino 'cuál carga más lento por unidad'. Un vehículo grande puede "
+                   "tardar más en total pero ser más eficiente por unidad.")
+
+    # Dispersión tiempo neto vs cantidad (la curva de cargue)
+    with colP2:
+        st.markdown("**Tiempo de cargue vs. cantidad**")
+        dprod_h = dprod.copy()
+        dprod_h["Horas"] = dprod_h["NetoMin"].apply(dur_a_horas)
+        color_vh = {"Sencillo": COL["azul"], "Doble Troque": COL["verde"],
+                    "Mula": COL["yema_d"]}
+        figc = px.scatter(dprod_h, x="Cantidad", y="NetoMin", color="TipoVh",
+                          color_discrete_map=color_vh,
+                          custom_data=["TipoVh", "Horas"])
+        figc.update_traces(marker=dict(size=11, opacity=0.75,
+                                       line=dict(width=1, color="white")),
+                           hovertemplate=("Cantidad: %{x}<br>Neto: %{y:.0f} min "
+                                          "(%{customdata[1]})<br>%{customdata[0]}<extra></extra>"))
+        figc.update_layout(plot_bgcolor="white", height=320, margin=dict(t=30),
+                           xaxis_title="Unidades cargadas", yaxis_title="Cargue neto (min)",
+                           legend=dict(orientation="h", y=1.15, title=""))
+        st.plotly_chart(figc, use_container_width=True)
+        st.caption("Si los puntos suben en línea recta, el tiempo es proporcional a la "
+                   "cantidad (lo esperable). Puntos que se salen de la línea son cargues "
+                   "anormalmente lentos o rápidos que vale la pena investigar.")
 
 
 # ------------------------------------------------------------------------------
@@ -714,7 +791,7 @@ else:
 # ------------------------------------------------------------------------------
 with st.expander("Ver detalle de registros analizados"):
     cols_show = ["Fecha", "Muelle", "Placa", "TipoVh", "TipoCargue", "Personas",
-                 "HoraInicio", "HoraFinal", "TotalMin", "TM", "NetoMin",
+                 "Cantidad", "HoraInicio", "HoraFinal", "TotalMin", "TM", "NetoMin",
                  "PctMuerto", "Causa"]
     cols_show = [c for c in cols_show if c in df_f.columns]
     tabla = df_f[cols_show].copy()
