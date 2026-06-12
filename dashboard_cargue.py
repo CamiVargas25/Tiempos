@@ -564,50 +564,11 @@ else:
 
 
 # ------------------------------------------------------------------------------
-# FILA 3: PRODUCTIVIDAD (personas) + TIPO VEHÍCULO + TIPO CARGUE
+# FILA 3: TIEMPO DE CARGUE POR TIPO DE VEHÍCULO
 # ------------------------------------------------------------------------------
-colC, colD = st.columns(2)
-
-with colC:
-    st.subheader("¿Más personas = menos tiempo?")
-    dp = df_f.dropna(subset=["Personas"]).copy()
-    dp["Personas"] = dp["Personas"].astype(int)
-    if len(dp):
-        # Promedio de tiempo neto y nº de cargues por cantidad de personas
-        agg = (dp.groupby("Personas")
-               .agg(neto=("NetoMin", "mean"), n=("NetoMin", "size"))
-               .reset_index().sort_values("Personas"))
-        agg["Personas_lbl"] = agg["Personas"].astype(str) + " personas"
-        agg["Horas"] = agg["neto"].apply(dur_a_horas)
-
-        fig4 = go.Figure()
-        fig4.add_bar(
-            x=agg["Personas_lbl"], y=agg["neto"],
-            marker_color=COL["azul"], customdata=agg["Horas"],
-            hovertemplate="%{x}<br>Promedio neto: %{y:.0f} min (%{customdata})<extra></extra>",
-        )
-        # Etiqueta encima: minutos promedio + nº de cargues que respaldan la barra
-        for _, r in agg.iterrows():
-            fig4.add_annotation(
-                x=r["Personas_lbl"], y=r["neto"],
-                text=f"<b>{r['neto']:.0f} min</b><br>{int(r['n'])} cargues",
-                showarrow=False, yshift=16, font=dict(size=11, color=COL["carbon"]))
-        fig4.update_layout(
-            plot_bgcolor="white", height=360, margin=dict(t=40),
-            yaxis_title="Cargue neto promedio (min)", xaxis_title="",
-            showlegend=False)
-        st.plotly_chart(fig4, use_container_width=True)
-        st.caption("Cada barra es el **tiempo neto promedio** de cargue según cuántas "
-                   "personas trabajaron. Si las barras **no bajan** al aumentar personas, "
-                   "sumar gente no reduce el tiempo: el cuello de botella está en otra "
-                   "parte (producto, espacio, equipo). El **nº de cargues** indica qué "
-                   "tan confiable es cada barra: pocas observaciones = tómalo con cautela.")
-    else:
-        st.info("Sin datos de número de personas.")
-
-with colD:
+dv = df_f.dropna(subset=["TipoVh"])
+if True:  # bloque de sección (mantiene indentación del contenido)
     st.subheader("Tiempo de cargue por tipo de vehículo")
-    dv = df_f.dropna(subset=["TipoVh"])
     if len(dv):
         gv = (dv.groupby("TipoVh")
               .agg(total=("TotalMin", "mean"), neto=("NetoMin", "mean"),
@@ -665,6 +626,17 @@ st.markdown(
 
 dsc = df_f.dropna(subset=["Personas", "TipoVh", "NetoMin"]).copy()
 dsc["Personas"] = dsc["Personas"].astype(int)
+
+# Excluir cargues que terminan después de las 17:30: el registro de tiempo muerto
+# no es confiable porque quien toma los tiempos suele retirarse a esa hora.
+LIMITE_REGISTRO = 17 * 60 + 30   # 17:30 en minutos desde medianoche
+antes_filtro = len(dsc)
+dsc = dsc[dsc["FinMin"].notna() & (dsc["FinMin"] <= LIMITE_REGISTRO)]
+excluidos_horario = antes_filtro - len(dsc)
+if excluidos_horario > 0:
+    st.caption(f"ℹ️ Se excluyeron {excluidos_horario} cargue(s) que finalizaron después "
+               "de las 17:30, porque su tiempo muerto puede no ser confiable (la persona "
+               "que registra suele retirarse a esa hora).")
 
 if len(dsc):
     orden_vh = ["Sencillo", "Doble Troque", "Mula"]
