@@ -470,14 +470,17 @@ if len(huecos_df):
         st.markdown("**Ociosidad por día**")
         vac_dia_df = vac_dia.reset_index()
         vac_dia_df["Horas"] = vac_dia_df["GapMin"].apply(dur_a_horas)
-        figv = px.bar(vac_dia_df, x="Fecha", y="GapMin",
+        # Fecha como texto ordenado => eje categórico (solo días con datos, sin huecos)
+        vac_dia_df = vac_dia_df.sort_values("Fecha")
+        vac_dia_df["FechaTxt"] = pd.to_datetime(vac_dia_df["Fecha"]).dt.strftime("%d/%m")
+        figv = px.bar(vac_dia_df, x="FechaTxt", y="GapMin",
                       color_discrete_sequence=[COL["gris"]],
                       custom_data=["Horas"])
         figv.update_traces(
             hovertemplate="%{x}<br>%{y:.0f} min vacíos (%{customdata[0]})<extra></extra>")
         figv.update_layout(plot_bgcolor="white", height=300,
                            yaxis_title="Minutos vacíos (muelles 1+2)",
-                           xaxis_title="", margin=dict(t=20))
+                           xaxis_title="", xaxis_type="category", margin=dict(t=20))
         st.plotly_chart(figv, use_container_width=True)
     with colV2:
         st.markdown("**Huecos individuales detectados**")
@@ -537,16 +540,18 @@ if len(huecos_df):
         st.markdown("**Tiempo con ambos muelles parados a la vez, por día**")
         ambos_df = ambos_por_dia.reset_index()
         ambos_df.columns = ["Fecha", "MinAmbos"]
-        ambos_df["Fecha"] = pd.to_datetime(ambos_df["Fecha"])
+        # Fecha como texto ordenado => eje categórico (solo días con datos)
+        ambos_df = ambos_df.sort_values("Fecha")
+        ambos_df["FechaTxt"] = pd.to_datetime(ambos_df["Fecha"]).dt.strftime("%d/%m")
         ambos_df["Horas"] = ambos_df["MinAmbos"].apply(dur_a_horas)
-        figa = px.bar(ambos_df, x="Fecha", y="MinAmbos",
+        figa = px.bar(ambos_df, x="FechaTxt", y="MinAmbos",
                       color_discrete_sequence=[COL["rojo"]],
                       custom_data=["Horas"])
         figa.update_traces(
-            hovertemplate="%{x|%d/%m}<br>%{y:.0f} min con todo parado (%{customdata[0]})<extra></extra>")
+            hovertemplate="%{x}<br>%{y:.0f} min con todo parado (%{customdata[0]})<extra></extra>")
         figa.update_layout(plot_bgcolor="white", height=300,
                            yaxis_title="Minutos sin ningún cargue activo",
-                           xaxis_title="", margin=dict(t=20))
+                           xaxis_title="", xaxis_type="category", margin=dict(t=20))
         st.plotly_chart(figa, use_container_width=True)
         st.caption(
             "Minutos por día en que ni el muelle 1 ni el 2 tenían un cargue activo: "
