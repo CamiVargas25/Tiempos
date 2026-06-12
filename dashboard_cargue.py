@@ -566,9 +566,17 @@ else:
 # ------------------------------------------------------------------------------
 # FILA 3: TIEMPO DE CARGUE POR TIPO DE VEHÍCULO
 # ------------------------------------------------------------------------------
-dv = df_f.dropna(subset=["TipoVh"])
+# Excluir cargues que terminan después de las 17:30: su tiempo muerto (barra roja)
+# no es confiable porque quien registra suele retirarse a esa hora.
+LIMITE_REGISTRO = 17 * 60 + 30   # 17:30 en minutos desde medianoche
+dv_all = df_f.dropna(subset=["TipoVh"])
+dv = dv_all[dv_all["FinMin"].notna() & (dv_all["FinMin"] <= LIMITE_REGISTRO)]
+excluidos_vh = len(dv_all) - len(dv)
 if True:  # bloque de sección (mantiene indentación del contenido)
     st.subheader("Tiempo de cargue por tipo de vehículo")
+    if excluidos_vh > 0:
+        st.caption(f"ℹ️ Se excluyeron {excluidos_vh} cargue(s) que finalizaron después "
+                   "de las 17:30, porque su tiempo muerto puede no ser confiable.")
     if len(dv):
         gv = (dv.groupby("TipoVh")
               .agg(total=("TotalMin", "mean"), neto=("NetoMin", "mean"),
@@ -627,9 +635,8 @@ st.markdown(
 dsc = df_f.dropna(subset=["Personas", "TipoVh", "NetoMin"]).copy()
 dsc["Personas"] = dsc["Personas"].astype(int)
 
-# Excluir cargues que terminan después de las 17:30: el registro de tiempo muerto
-# no es confiable porque quien toma los tiempos suele retirarse a esa hora.
-LIMITE_REGISTRO = 17 * 60 + 30   # 17:30 en minutos desde medianoche
+# Excluir cargues que terminan después de las 17:30 (LIMITE_REGISTRO ya definido arriba):
+# el registro de tiempo muerto no es confiable porque quien toma los tiempos se retira.
 antes_filtro = len(dsc)
 dsc = dsc[dsc["FinMin"].notna() & (dsc["FinMin"] <= LIMITE_REGISTRO)]
 excluidos_horario = antes_filtro - len(dsc)
