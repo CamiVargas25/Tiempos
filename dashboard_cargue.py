@@ -140,6 +140,8 @@ def cargar_datos(file, nombre):
         "causa": "Causa",
         "cantidad": "Cantidad", "cantidad cargada": "Cantidad",
         "canastas": "Cantidad", "unidades": "Cantidad", "cajas": "Cantidad",
+        "estibas": "Estibas", "estiba": "Estibas", "# estibas": "Estibas",
+        "numero de estibas": "Estibas", "número de estibas": "Estibas",
     }
     ren = {}
     for c in df.columns:
@@ -167,6 +169,8 @@ def cargar_datos(file, nombre):
     df["Personas"] = pd.to_numeric(df.get("Personas"), errors="coerce").astype("Int64")
     # Cantidad cargada (opcional): si no existe la columna, queda como NaN
     df["Cantidad"] = pd.to_numeric(df.get("Cantidad"), errors="coerce")
+    # Estibas reales (opcional): si no existe la columna, queda como NaN
+    df["EstibasReal"] = pd.to_numeric(df.get("Estibas"), errors="coerce")
 
     # Muelle como entero limpio (evita '1.0', '2.0'): a número, luego a entero,
     # y a texto sin decimales para mostrar y filtrar.
@@ -198,6 +202,19 @@ def cargar_datos(file, nombre):
     # Métricas de productividad por unidad (solo si hay Cantidad > 0)
     df["MinNetoPorUnidad"] = (df["NetoMin"] / df["Cantidad"]).where(df["Cantidad"] > 0)
     df["UnidadesPorHora"] = (df["Cantidad"] / (df["NetoMin"] / 60)).where(df["NetoMin"] > 0)
+
+    # Estibas: usa la columna real si existe; si no, estima con capacidad teórica
+    # por tipo de vehículo (asume estibas llenas — es una aproximación).
+    CAP_ESTIBA = {"Sencillo": 4320, "Doble Troque": 6480, "Mula": 7920}
+    def estibas_estimadas(row):
+        cap = CAP_ESTIBA.get(row["TipoVh"])
+        if cap and pd.notna(row["Cantidad"]) and row["Cantidad"] > 0:
+            return row["Cantidad"] / cap
+        return None
+    df["EstibasEst"] = df.apply(estibas_estimadas, axis=1)
+    # Estibas efectivas: real si está disponible, si no la estimada
+    df["Estibas"] = df["EstibasReal"].where(df["EstibasReal"].notna(), df["EstibasEst"])
+    df["EstibasPorHora"] = (df["Estibas"] / (df["NetoMin"] / 60)).where(df["NetoMin"] > 0)
 
     return df
 
@@ -626,47 +643,79 @@ dprod = df_f[df_f["Cantidad"].notna() & (df_f["Cantidad"] > 0)
 dprod = dprod[dprod["FinMin"].notna() & (dprod["FinMin"] <= LIMITE_REGISTRO)]
 
 if len(dprod):
+    # ¿Las estibas son reales o estimadas? (para etiquetar honestamente)
+    usa_estibas_real = dprod["EstibasReal"].notna().any()
+    nota_estibas = ("estibas registradas en planta" if usa_estibas_real
+                    else "estibas estimadas asumiendo estibas llenas "
+                         "(Sencillo 4320 · Doble Troque 6480 · Mula 7920 und)")
+
     st.subheader("Productividad por unidad cargada")
     st.markdown(
         "Al incorporar la **cantidad cargada**, el análisis pasa de medir *cuánto tarda* "
-        "a medir *qué tan eficiente es* el cargue, normalizando el tamaño del pedido."
+        "a medir *qué tan eficiente es* el cargue. Se muestran dos métricas "
+        "complementarias: **unidades/hora** (throughput de producto despachado) y "
+        "**estibas/hora** (esfuerzo físico de manipulación de la cuadrilla)."
     )
 
-    # KPI único: ritmo de cargue (unidades por hora de trabajo efectivo)
+    # KPIs: ritmo en unidades/h y en estibas/h
     und_hora = dprod["Cantidad"].sum() / (dprod["NetoMin"].sum() / 60)
-    st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
-        <div class="kpi-label">Ritmo de cargue</div>
-        <div class="kpi-value">{und_hora:.0f} und/h</div>
-        <div class="kpi-sub">unidades cargadas por hora de trabajo efectivo (sin tiempo muerto)</div>
-    </div>""", unsafe_allow_html=True)
+    dprod_est = dprod[dprod["Estibas"].notna() & (dprod["Estibas"] > 0)]
+    est_hora = (dprod_est["Estibas"].sum() / (dprod_est["NetoMin"].sum() / 60)
+                if len(dprod_est) else 0)
+    k1, k2 = st.columns(2)
+    with k1:
+        st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
+            <div class="kpi-label">Ritmo de cargue · unidades</div>
+            <div class="kpi-value">{und_hora:,.0f} und/h</div>
+            <div class="kpi-sub">producto despachado por hora de trabajo efectivo</div>
+        </div>""", unsafe_allow_html=True)
+    with k2:
+        st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['verde']}">
+            <div class="kpi-label">Ritmo de cargue · estibas</div>
+            <div class="kpi-value">{est_hora:.1f} estibas/h</div>
+            <div class="kpi-sub">esfuerzo físico de manipulación por hora</div>
+        </div>""", unsafe_allow_html=True)
+    st.caption(f"ℹ️ Estibas: {nota_estibas}.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     colP1, colP2 = st.columns(2)
 
-    # Ritmo de cargue (und/h) por tipo de vehículo — la comparación justa
+    # Ritmo por tipo de vehículo: unidades/h Y estibas/h (barras agrupadas)
     with colP1:
-        st.markdown("**Ritmo de cargue (und/h) por tipo de vehículo**")
-        gp = (dprod.groupby("TipoVh")
-              .apply(lambda x: x["Cantidad"].sum() / (x["NetoMin"].sum() / 60))
-              .reset_index(name="und_h"))
-        gp["n"] = dprod.groupby("TipoVh").size().values
+        st.markdown("**Ritmo por tipo de vehículo: unidades/h vs. estibas/h**")
         orden_vh = ["Sencillo", "Doble Troque", "Mula"]
+        gp = (dprod.groupby("TipoVh")
+              .apply(lambda x: pd.Series({
+                  "und_h": x["Cantidad"].sum() / (x["NetoMin"].sum() / 60),
+                  "est_h": (x["Estibas"].sum() / (x["NetoMin"].sum() / 60)
+                            if x["Estibas"].notna().any() else 0),
+                  "n": len(x)}))
+              .reset_index())
         gp["_ord"] = gp["TipoVh"].apply(
             lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
         gp = gp.sort_values("_ord")
+        # Dos ejes Y: unidades/h (izq) y estibas/h (der), porque las escalas difieren mucho
         figp = go.Figure()
-        figp.add_bar(x=gp["TipoVh"], y=gp["und_h"], marker_color=COL["yema_d"],
-                     text=gp["und_h"].round(0).astype(int).astype(str) + " und/h",
+        figp.add_bar(x=gp["TipoVh"], y=gp["und_h"], name="Unidades/h",
+                     marker_color=COL["yema_d"],
+                     text=gp["und_h"].round(0).astype(int).map("{:,}".format),
                      textposition="outside")
-        figp.update_layout(plot_bgcolor="white", height=320, margin=dict(t=30),
-                           yaxis_title="Unidades por hora", xaxis_title="",
-                           xaxis=dict(categoryorder="array",
-                                      categoryarray=gp["TipoVh"].tolist()),
-                           showlegend=False)
+        figp.add_trace(go.Scatter(
+            x=gp["TipoVh"], y=gp["est_h"], name="Estibas/h", yaxis="y2",
+            mode="markers+text", marker=dict(size=14, color=COL["verde"]),
+            text=gp["est_h"].round(1).astype(str), textposition="top center"))
+        figp.update_layout(
+            plot_bgcolor="white", height=340, margin=dict(t=40),
+            yaxis=dict(title="Unidades por hora"),
+            yaxis2=dict(title="Estibas por hora", overlaying="y", side="right",
+                        showgrid=False),
+            xaxis=dict(categoryorder="array", categoryarray=gp["TipoVh"].tolist()),
+            legend=dict(orientation="h", y=1.18))
         st.plotly_chart(figp, use_container_width=True)
-        st.caption("La comparación justa entre vehículos: cuántas unidades carga por hora "
-                   "cada tipo. Un vehículo grande puede tardar más en total pero cargar "
-                   "más unidades por hora (ser más eficiente).")
+        st.caption("Barras (eje izq.) = unidades/h; puntos (eje der.) = estibas/h. Si la "
+                   "mula tiene más unidades/h pero estibas/h **parecido** a los demás, "
+                   "significa que la cuadrilla trabaja al mismo ritmo físico y la mula "
+                   "solo despacha más producto porque cabe más por estiba.")
 
     # Dispersión tiempo neto vs cantidad, con filtro de vehículo por botones
     with colP2:
@@ -805,8 +854,8 @@ else:
 # ------------------------------------------------------------------------------
 with st.expander("Ver detalle de registros analizados"):
     cols_show = ["Fecha", "Muelle", "Placa", "TipoVh", "TipoCargue", "Personas",
-                 "Cantidad", "HoraInicio", "HoraFinal", "TotalMin", "TM", "NetoMin",
-                 "PctMuerto", "Causa"]
+                 "Cantidad", "Estibas", "HoraInicio", "HoraFinal", "TotalMin", "TM",
+                 "NetoMin", "PctMuerto", "Causa"]
     cols_show = [c for c in cols_show if c in df_f.columns]
     tabla = df_f[cols_show].copy()
     tabla["Fecha"] = tabla["Fecha"].dt.strftime("%d/%m/%Y")
