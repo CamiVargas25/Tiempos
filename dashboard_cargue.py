@@ -391,6 +391,34 @@ for (fecha, muelle), g in dvac.groupby(["Fecha_d", "Muelle"]):
                            "FinAnt": fins[i], "IniSig": inis[i + 1], "GapMin": gap})
 huecos_df = pd.DataFrame(huecos)
 
+# --- Reparto de cada hueco vacío entre los 3 turnos de cargue ---
+# Turno 1: 6-14 (360-840) · Turno 2: 14-22 (840-1320) · Turno 3: 22-6 (1320-1440 + 0-360)
+TURNOS = {1: "T1 · 6-14", 2: "T2 · 14-22", 3: "T3 · 22-6"}
+
+def minuto_a_turno(m):
+    m = m % 1440
+    if 360 <= m < 840:
+        return 1
+    if 840 <= m < 1320:
+        return 2
+    return 3
+
+def repartir_hueco(ini, fin):
+    """Reparte proporcionalmente los minutos de [ini, fin) entre turnos."""
+    reparto = {1: 0, 2: 0, 3: 0}
+    for m in range(int(ini), int(fin)):
+        reparto[minuto_a_turno(m)] += 1
+    return reparto
+
+# Acumular minutos vacíos por turno y contar días distintos con operación en cada turno
+vac_turno = {1: 0, 2: 0, 3: 0}
+if len(huecos_df):
+    for _, r in huecos_df.iterrows():
+        rep = repartir_hueco(r["FinAnt"], r["IniSig"])
+        for t in (1, 2, 3):
+            vac_turno[t] += rep[t]
+n_dias = huecos_df["Fecha"].nunique() if len(huecos_df) else 0
+
 # Total vacío por día (suma de huecos de muelles 1 y 2 en cada día)
 if len(huecos_df):
     vac_dia = huecos_df.groupby("Fecha")["GapMin"].sum()
@@ -467,6 +495,40 @@ if len(huecos_df):
         "ningún muelle operativo tenía cargue activo (cuello de botella crítico, suele "
         "señalar falta de producto o de camiones). La tabla de la derecha muestra cada "
         "hueco individual con su duración real.")
+
+    # --- Tiempo vacío por turno de cargue ---
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("**¿En qué turno se concentra el tiempo vacío?**")
+    turno_df = pd.DataFrame({
+        "Turno": [TURNOS[t] for t in (1, 2, 3)],
+        "VacioTotal": [vac_turno[t] for t in (1, 2, 3)],
+    })
+    turno_df["VacioProm"] = turno_df["VacioTotal"] / n_dias if n_dias else 0
+    turno_df["HorasTotal"] = turno_df["VacioTotal"].apply(dur_a_horas)
+    turno_df["HorasProm"] = turno_df["VacioProm"].apply(dur_a_horas)
+
+    color_turno = [COL["yema"], COL["azul"], COL["carbon"]]
+    figt = go.Figure()
+    figt.add_bar(
+        x=turno_df["Turno"], y=turno_df["VacioProm"],
+        marker_color=color_turno,
+        customdata=turno_df[["HorasProm", "VacioTotal", "HorasTotal"]],
+        hovertemplate=("%{x}<br>Promedio diario: %{y:.0f} min (%{customdata[0]})"
+                       "<br>Total acumulado: %{customdata[1]:.0f} min (%{customdata[2]})"
+                       "<extra></extra>"),
+        text=turno_df["VacioProm"].round(0).astype(int).astype(str) + " min/día",
+        textposition="outside",
+    )
+    figt.update_layout(
+        plot_bgcolor="white", height=320, margin=dict(t=30),
+        yaxis_title="Minutos vacíos promedio por día", xaxis_title="",
+        showlegend=False)
+    st.plotly_chart(figt, use_container_width=True)
+    st.caption(
+        "Cada hueco vacío se reparte proporcionalmente entre los turnos que abarca "
+        "(un hueco de 13:40 a 14:30 suma a T1 y a T2 según los minutos en cada uno). "
+        "Se muestra el **promedio diario** por turno para comparar de forma justa; "
+        "pasa el cursor para ver también el total acumulado del periodo.")
 else:
     st.info("No hay suficientes cargues consecutivos en los muelles 1 y 2 para "
             "calcular tiempos vacíos en este periodo. Se necesitan al menos dos "
