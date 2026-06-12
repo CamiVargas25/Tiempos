@@ -653,6 +653,84 @@ with colD:
 
 
 # ------------------------------------------------------------------------------
+# FILA 4: ¿INFLUYE EL PERSONAL EN EL TIEMPO DE CARGUE? (por tipo de vehículo)
+# ------------------------------------------------------------------------------
+st.subheader("¿La cantidad de personas influye en el tiempo de cargue?")
+st.markdown(
+    "Dispersión de **cargue neto** (sin tiempo muerto) según el número de personas, "
+    "para **un solo tipo de vehículo a la vez**. Comparar mezclando vehículos no tiene "
+    "sentido: un doble troque tarda más que un sencillo por tamaño, no por personal. "
+    "Usa los botones para cambiar de vehículo."
+)
+
+dsc = df_f.dropna(subset=["Personas", "TipoVh", "NetoMin"]).copy()
+dsc["Personas"] = dsc["Personas"].astype(int)
+
+if len(dsc):
+    orden_vh = ["Sencillo", "Doble Troque", "Mula"]
+    tipos = [t for t in orden_vh if t in dsc["TipoVh"].unique()]
+    # Añadir cualquier tipo no contemplado al final
+    tipos += [t for t in dsc["TipoVh"].unique() if t not in tipos]
+
+    fig8 = go.Figure()
+    colores = [COL["azul"], COL["verde"], COL["yema_d"], COL["rojo"]]
+    for i, t in enumerate(tipos):
+        sub = dsc[dsc["TipoVh"] == t]
+        sub_horas = sub["NetoMin"].apply(dur_a_horas)
+        # Promedio de neto por nº de personas (línea de apoyo dentro del tipo)
+        med = sub.groupby("Personas")["NetoMin"].mean().reset_index().sort_values("Personas")
+        fig8.add_trace(go.Scatter(
+            x=sub["Personas"], y=sub["NetoMin"], mode="markers",
+            name=t, visible=(i == 0),
+            marker=dict(size=11, color=colores[i % len(colores)], opacity=0.75,
+                        line=dict(width=1, color="white")),
+            customdata=list(zip(sub["Placa"] if "Placa" in sub else ["—"]*len(sub),
+                                sub_horas)),
+            hovertemplate=("Personas: %{x}<br>Neto: %{y:.0f} min (%{customdata[1]})"
+                           "<br>Placa: %{customdata[0]}<extra></extra>"),
+        ))
+        fig8.add_trace(go.Scatter(
+            x=med["Personas"], y=med["NetoMin"], mode="lines+markers",
+            name=f"Promedio {t}", visible=(i == 0),
+            line=dict(color=COL["carbon"], dash="dash", width=2),
+            marker=dict(size=7, color=COL["carbon"]),
+            hovertemplate="Personas: %{x}<br>Promedio: %{y:.0f} min<extra></extra>",
+        ))
+
+    # Botones: cada uno enciende las 2 trazas (puntos + promedio) de un tipo
+    n_traces = len(tipos) * 2
+    botones = []
+    for i, t in enumerate(tipos):
+        vis = [False] * n_traces
+        vis[i * 2] = True       # puntos
+        vis[i * 2 + 1] = True   # línea promedio
+        n_t = len(dsc[dsc["TipoVh"] == t])
+        botones.append(dict(
+            label=f"{t} ({n_t})", method="update",
+            args=[{"visible": vis},
+                  {"title": f"Personas vs cargue neto · {t}"}]))
+
+    fig8.update_layout(
+        updatemenus=[dict(
+            type="buttons", direction="right", x=0, y=1.18, xanchor="left",
+            buttons=botones, showactive=True,
+            bgcolor="white", bordercolor=COL["gris"], font=dict(size=12))],
+        title=f"Personas vs cargue neto · {tipos[0]}",
+        plot_bgcolor="white", height=420, margin=dict(t=80),
+        xaxis=dict(title="# de personas en el cargue", dtick=1),
+        yaxis_title="Cargue neto (min)", showlegend=False)
+    st.plotly_chart(fig8, use_container_width=True)
+    st.caption(
+        "Cada punto es un cargue de ese tipo de vehículo; la línea punteada es el "
+        "promedio de cargue neto por número de personas. Si la línea **no baja** al "
+        "aumentar personas, sumar gente no acelera el cargue de ese vehículo. El número "
+        "entre paréntesis en cada botón es cuántos cargues hay de ese tipo: con pocos "
+        "puntos, léelo como exploratorio, no concluyente.")
+else:
+    st.info("Sin datos suficientes de personas y tipo de vehículo para este análisis.")
+
+
+# ------------------------------------------------------------------------------
 # TABLA DE DETALLE
 # ------------------------------------------------------------------------------
 with st.expander("Ver detalle de registros analizados"):
