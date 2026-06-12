@@ -444,6 +444,7 @@ if len(dvac):
     ambos_por_dia = dvac.groupby("Fecha_d").apply(ambos_vacios_dia)
     prom_ambos = ambos_por_dia.mean()
 else:
+    ambos_por_dia = pd.Series(dtype=float)
     prom_ambos = 0
 
 # --- KPIs de ociosidad (fila propia, separada de los KPIs de tiempo de cargue) ---
@@ -529,6 +530,28 @@ if len(huecos_df):
         "(un hueco de 13:40 a 14:30 suma a T1 y a T2 según los minutos en cada uno). "
         "Se muestra el **promedio diario** por turno para comparar de forma justa; "
         "pasa el cursor para ver también el total acumulado del periodo.")
+
+    # --- Ambos muelles vacíos a la vez, por día ---
+    if len(ambos_por_dia):
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("**Tiempo con ambos muelles parados a la vez, por día**")
+        ambos_df = ambos_por_dia.reset_index()
+        ambos_df.columns = ["Fecha", "MinAmbos"]
+        ambos_df["Fecha"] = pd.to_datetime(ambos_df["Fecha"])
+        ambos_df["Horas"] = ambos_df["MinAmbos"].apply(dur_a_horas)
+        figa = px.bar(ambos_df, x="Fecha", y="MinAmbos",
+                      color_discrete_sequence=[COL["rojo"]],
+                      custom_data=["Horas"])
+        figa.update_traces(
+            hovertemplate="%{x|%d/%m}<br>%{y:.0f} min con todo parado (%{customdata[0]})<extra></extra>")
+        figa.update_layout(plot_bgcolor="white", height=300,
+                           yaxis_title="Minutos sin ningún cargue activo",
+                           xaxis_title="", margin=dict(t=20))
+        st.plotly_chart(figa, use_container_width=True)
+        st.caption(
+            "Minutos por día en que ni el muelle 1 ni el 2 tenían un cargue activo: "
+            "tu capacidad de cargue totalmente detenida. Los picos suelen coincidir con "
+            "falta de producto o ausencia de camiones programados.")
 else:
     st.info("No hay suficientes cargues consecutivos en los muelles 1 y 2 para "
             "calcular tiempos vacíos en este periodo. Se necesitan al menos dos "
@@ -622,54 +645,6 @@ with colD:
                    "es tiempo muerto, para ese tipo de vehículo. Pasa el cursor para horas.")
     else:
         st.info("Sin datos de tipo de vehículo.")
-
-
-# ------------------------------------------------------------------------------
-# FILA 4: TENDENCIA POR DÍA (solo tiene sentido en histórico)
-# ------------------------------------------------------------------------------
-if etiqueta_periodo == "Histórico":
-    st.subheader("Evolución diaria del tiempo de cargue")
-    gd = (df_f.groupby(df_f["Fecha"].dt.date)
-          .agg(total=("TotalMin", "mean"), neto=("NetoMin", "mean"),
-               tm=("TM", "mean"), n=("TotalMin", "size")).reset_index())
-    gd = gd.rename(columns={"Fecha": "Dia"})
-    fig6 = go.Figure()
-    fig6.add_bar(x=gd["Dia"], y=gd["neto"], name="Cargue neto", marker_color=COL["verde"])
-    fig6.add_bar(x=gd["Dia"], y=gd["tm"], name="Tiempo muerto", marker_color=COL["rojo"])
-    fig6.add_trace(go.Scatter(x=gd["Dia"], y=gd["total"], name="Total",
-                              mode="lines+markers", line=dict(color=COL["carbon"])))
-    fig6.update_layout(barmode="stack", plot_bgcolor="white", height=340,
-                       yaxis_title="Minutos promedio",
-                       legend=dict(orientation="h", y=1.12), margin=dict(t=20))
-    st.plotly_chart(fig6, use_container_width=True)
-    st.caption("Permite ver si el problema es estable o se concentra en ciertos días.")
-
-    # --- Composición diaria de cargues por tipo de vehículo (100% apilado) ---
-    st.subheader("Proporción diaria de cargues por tipo de vehículo")
-    dvd = df_f.dropna(subset=["TipoVh"]).copy()
-    if len(dvd):
-        comp = (dvd.groupby([dvd["Fecha"].dt.date, "TipoVh"])
-                .size().reset_index(name="n"))
-        comp = comp.rename(columns={"Fecha": "Dia"})
-        # Total por día para sacar el %
-        tot_dia = comp.groupby("Dia")["n"].transform("sum")
-        comp["pct"] = comp["n"] / tot_dia * 100
-        orden_vh = ["Sencillo", "Doble Troque", "Mula"]
-        color_vh = {"Sencillo": COL["yema_d"], "Doble Troque": COL["verde"],
-                    "Mula": COL["azul"]}
-        fig7 = px.bar(comp, x="Dia", y="pct", color="TipoVh",
-                      category_orders={"TipoVh": orden_vh},
-                      color_discrete_map=color_vh,
-                      custom_data=["TipoVh", "n"])
-        fig7.update_traces(
-            hovertemplate="%{x}<br>%{customdata[0]}: %{y:.0f}% (%{customdata[1]} cargues)<extra></extra>")
-        fig7.update_layout(barmode="stack", plot_bgcolor="white", height=320,
-                           yaxis=dict(title="% de cargues del día", range=[0, 100]),
-                           legend=dict(orientation="h", y=1.12), margin=dict(t=20))
-        st.plotly_chart(fig7, use_container_width=True)
-        st.caption("Cada barra suma 100%: muestra cómo se reparten los cargues de cada "
-                   "día entre tipos de vehículo. Sirve para ver si la mezcla cambia y si "
-                   "los días más lentos coinciden con más mulas o doble troques.")
 
 
 # ------------------------------------------------------------------------------
