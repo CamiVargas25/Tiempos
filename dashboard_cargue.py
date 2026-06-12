@@ -632,70 +632,84 @@ if len(dprod):
         "a medir *qué tan eficiente es* el cargue, normalizando el tamaño del pedido."
     )
 
-    # KPI: minutos netos por unidad (global) y unidades por hora (global)
-    min_unidad = dprod["NetoMin"].sum() / dprod["Cantidad"].sum()
+    # KPI único: ritmo de cargue (unidades por hora de trabajo efectivo)
     und_hora = dprod["Cantidad"].sum() / (dprod["NetoMin"].sum() / 60)
-    p1, p2 = st.columns(2)
-    with p1:
-        st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['verde']}">
-            <div class="kpi-label">Minutos por unidad (cargue neto)</div>
-            <div class="kpi-value">{min_unidad:.1f} min</div>
-            <div class="kpi-sub">tiempo efectivo de cargue por unidad</div>
-        </div>""", unsafe_allow_html=True)
-    with p2:
-        st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
-            <div class="kpi-label">Ritmo de cargue</div>
-            <div class="kpi-value">{und_hora:.0f} und/h</div>
-            <div class="kpi-sub">unidades cargadas por hora de trabajo efectivo</div>
-        </div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
+        <div class="kpi-label">Ritmo de cargue</div>
+        <div class="kpi-value">{und_hora:.0f} und/h</div>
+        <div class="kpi-sub">unidades cargadas por hora de trabajo efectivo (sin tiempo muerto)</div>
+    </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     colP1, colP2 = st.columns(2)
 
-    # Minutos por unidad por tipo de vehículo (la comparación JUSTA)
+    # Ritmo de cargue (und/h) por tipo de vehículo — la comparación justa
     with colP1:
-        st.markdown("**Minutos por unidad, por tipo de vehículo**")
+        st.markdown("**Ritmo de cargue (und/h) por tipo de vehículo**")
         gp = (dprod.groupby("TipoVh")
-              .apply(lambda x: x["NetoMin"].sum() / x["Cantidad"].sum())
-              .reset_index(name="min_und"))
+              .apply(lambda x: x["Cantidad"].sum() / (x["NetoMin"].sum() / 60))
+              .reset_index(name="und_h"))
         gp["n"] = dprod.groupby("TipoVh").size().values
         orden_vh = ["Sencillo", "Doble Troque", "Mula"]
         gp["_ord"] = gp["TipoVh"].apply(
             lambda x: orden_vh.index(x) if x in orden_vh else len(orden_vh))
         gp = gp.sort_values("_ord")
         figp = go.Figure()
-        figp.add_bar(x=gp["TipoVh"], y=gp["min_und"], marker_color=COL["yema_d"],
-                     text=gp["min_und"].round(1).astype(str) + " min",
+        figp.add_bar(x=gp["TipoVh"], y=gp["und_h"], marker_color=COL["yema_d"],
+                     text=gp["und_h"].round(0).astype(int).astype(str) + " und/h",
                      textposition="outside")
         figp.update_layout(plot_bgcolor="white", height=320, margin=dict(t=30),
-                           yaxis_title="Minutos netos por unidad", xaxis_title="",
+                           yaxis_title="Unidades por hora", xaxis_title="",
+                           xaxis=dict(categoryorder="array",
+                                      categoryarray=gp["TipoVh"].tolist()),
                            showlegend=False)
         st.plotly_chart(figp, use_container_width=True)
-        st.caption("La comparación justa entre vehículos: ya no es 'cuál tarda más' "
-                   "sino 'cuál carga más lento por unidad'. Un vehículo grande puede "
-                   "tardar más en total pero ser más eficiente por unidad.")
+        st.caption("La comparación justa entre vehículos: cuántas unidades carga por hora "
+                   "cada tipo. Un vehículo grande puede tardar más en total pero cargar "
+                   "más unidades por hora (ser más eficiente).")
 
-    # Dispersión tiempo neto vs cantidad (la curva de cargue)
+    # Dispersión tiempo neto vs cantidad, con filtro de vehículo por botones
     with colP2:
         st.markdown("**Tiempo de cargue vs. cantidad**")
-        dprod_h = dprod.copy()
-        dprod_h["Horas"] = dprod_h["NetoMin"].apply(dur_a_horas)
-        color_vh = {"Sencillo": COL["azul"], "Doble Troque": COL["verde"],
-                    "Mula": COL["yema_d"]}
-        figc = px.scatter(dprod_h, x="Cantidad", y="NetoMin", color="TipoVh",
-                          color_discrete_map=color_vh,
-                          custom_data=["TipoVh", "Horas"])
-        figc.update_traces(marker=dict(size=11, opacity=0.75,
-                                       line=dict(width=1, color="white")),
-                           hovertemplate=("Cantidad: %{x}<br>Neto: %{y:.0f} min "
-                                          "(%{customdata[1]})<br>%{customdata[0]}<extra></extra>"))
-        figc.update_layout(plot_bgcolor="white", height=320, margin=dict(t=30),
-                           xaxis_title="Unidades cargadas", yaxis_title="Cargue neto (min)",
-                           legend=dict(orientation="h", y=1.15, title=""))
+        tipos_c = [t for t in orden_vh if t in dprod["TipoVh"].unique()]
+        tipos_c += [t for t in dprod["TipoVh"].unique() if t not in tipos_c]
+        colores_c = [COL["azul"], COL["verde"], COL["yema_d"], COL["rojo"]]
+        figc = go.Figure()
+        for i, t in enumerate(tipos_c):
+            sub = dprod[dprod["TipoVh"] == t]
+            sub_horas = sub["NetoMin"].apply(dur_a_horas)
+            figc.add_trace(go.Scatter(
+                x=sub["Cantidad"], y=sub["NetoMin"], mode="markers",
+                name=t, visible=(i == 0),
+                marker=dict(size=11, color=colores_c[i % len(colores_c)], opacity=0.75,
+                            line=dict(width=1, color="white")),
+                customdata=list(zip(sub["Placa"] if "Placa" in sub else ["—"]*len(sub),
+                                    sub_horas)),
+                hovertemplate=("Cantidad: %{x}<br>Neto: %{y:.0f} min (%{customdata[1]})"
+                               "<br>Placa: %{customdata[0]}<extra></extra>"),
+            ))
+        botones_c = []
+        for i, t in enumerate(tipos_c):
+            vis = [j == i for j in range(len(tipos_c))]
+            n_t = len(dprod[dprod["TipoVh"] == t])
+            botones_c.append(dict(
+                label=f"{t} ({n_t})", method="update",
+                args=[{"visible": vis},
+                      {"title": f"Cantidad vs cargue neto · {t}"}]))
+        figc.update_layout(
+            updatemenus=[dict(
+                type="buttons", direction="right", x=0, y=1.22, xanchor="left",
+                buttons=botones_c, showactive=True,
+                bgcolor="white", bordercolor=COL["gris"], font=dict(size=11))],
+            title=f"Cantidad vs cargue neto · {tipos_c[0]}",
+            plot_bgcolor="white", height=360, margin=dict(t=80),
+            xaxis_title="Unidades cargadas", yaxis_title="Cargue neto (min)",
+            showlegend=False)
         st.plotly_chart(figc, use_container_width=True)
-        st.caption("Si los puntos suben en línea recta, el tiempo es proporcional a la "
-                   "cantidad (lo esperable). Puntos que se salen de la línea son cargues "
-                   "anormalmente lentos o rápidos que vale la pena investigar.")
+        st.caption("Para un solo tipo de vehículo a la vez. Si los puntos suben en línea "
+                   "recta, el tiempo es proporcional a la cantidad. Puntos que se salen "
+                   "son cargues anormalmente lentos o rápidos que vale la pena investigar. "
+                   "Excluye cargues que terminan después de las 17:30.")
 
 
 # ------------------------------------------------------------------------------
