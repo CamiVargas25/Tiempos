@@ -642,6 +642,16 @@ dprod = df_f[df_f["Cantidad"].notna() & (df_f["Cantidad"] > 0)
 # Aplicar también el filtro de las 17:30 (tiempo neto depende de tiempo muerto)
 dprod = dprod[dprod["FinMin"].notna() & (dprod["FinMin"] <= LIMITE_REGISTRO)]
 
+# Restringir a cargues "estibado canasta" puro: es la muestra homogénea donde la
+# relación unidades-estibas es consistente. Se excluyen suelto, caja, a piso y mixtos
+# (ej. "estibado canasta y estibado suelto"), porque distorsionan el conteo de estibas.
+antes_tipocarga = len(dprod)
+if "TipoCargue" in dprod.columns:
+    tc = dprod["TipoCargue"].fillna("").str.lower().str.strip()
+    es_canasta_puro = tc.isin(["estibado canasta", "canasta", "estibado canastas"])
+    dprod = dprod[es_canasta_puro]
+excluidos_tipocarga = antes_tipocarga - len(dprod)
+
 if len(dprod):
     # ¿Las estibas son reales o estimadas? (para etiquetar honestamente)
     usa_estibas_real = dprod["EstibasReal"].notna().any()
@@ -656,6 +666,10 @@ if len(dprod):
         "complementarias: **unidades/hora** (throughput de producto despachado) y "
         "**estibas/hora** (esfuerzo físico de manipulación de la cuadrilla)."
     )
+    st.caption(f"🔎 Análisis restringido a cargues **estibado canasta** "
+               f"({len(dprod)} cargues), para tener una muestra homogénea donde la "
+               f"relación unidades-estibas es consistente. Se excluyeron "
+               f"{excluidos_tipocarga} cargue(s) de otros tipos de carga.")
 
     # KPIs: ritmo en unidades/h y en estibas/h
     und_hora = dprod["Cantidad"].sum() / (dprod["NetoMin"].sum() / 60)
