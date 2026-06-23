@@ -156,10 +156,21 @@ def cargar_datos(file, nombre):
         key = c.lower().strip()
         if key in alias:
             ren[c] = alias[key]
-        # Detección por contenido para 'personas' (tolera '# persona', espacios
-        # extra, etc.) si el match exacto no la encontró
-        elif "persona" in key:
+            continue
+        # Detección por CONTENIDO cuando el nombre exacto no coincide (tolera
+        # 'T.M', 'T.M Minutos', '# Personal', 'Tipo de Carga', etc.)
+        if "persona" in key:
             ren[c] = "Personas"
+        elif "t.m" in key or "tiempo muerto" in key or "muerto" in key:
+            ren[c] = "TM"
+        elif "hora" in key and ("inicio" in key or "inicial" in key):
+            ren[c] = "HoraInicio"
+        elif "hora" in key and ("final" in key or "fin" in key):
+            ren[c] = "HoraFinal"
+        elif key.startswith("tipo") and ("carga" in key or "cargue" in key):
+            ren[c] = "TipoCargue"
+        elif key.startswith("tipo") and ("vh" in key or "veh" in key):
+            ren[c] = "TipoVh"
     df = df.rename(columns=ren)
 
     # Si aún no existe la columna Personas, avisar para diagnóstico
