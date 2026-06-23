@@ -115,15 +115,22 @@ def cargar_datos(file, nombre):
     if nombre.lower().endswith((".xlsx", ".xls")):
         df = pd.read_excel(file)
     else:
-        # Probar separadores comunes de exportaciones de Sheets
         raw = file.read()
+        # Elegir el separador que produzca MÁS columnas (no el primero que dé >=5),
+        # para evitar que un separador equivocado deje todo en pocas columnas.
+        mejor_df, mejor_ncols = None, 0
         for sep in (",", ";", "\t"):
             try:
-                df = pd.read_csv(io.BytesIO(raw), sep=sep)
-                if df.shape[1] >= 5:
-                    break
+                tmp = pd.read_csv(io.BytesIO(raw), sep=sep)
+                if tmp.shape[1] > mejor_ncols:
+                    mejor_df, mejor_ncols = tmp, tmp.shape[1]
             except Exception:
                 continue
+        df = mejor_df if mejor_df is not None else pd.read_csv(io.BytesIO(raw))
+
+    # Quitar columnas sin nombre / basura ('Unnamed: N') y filas totalmente vacías
+    df = df.loc[:, ~df.columns.astype(str).str.startswith("Unnamed")]
+    df = df.dropna(how="all")
     df.columns = [str(c).strip() for c in df.columns]
 
     # Mapa flexible de nombres de columna -> nombre canónico
@@ -134,6 +141,7 @@ def cargar_datos(file, nombre):
         "hora inicio": "HoraInicio", "hora inicial": "HoraInicio",
         "hora final": "HoraFinal", "hora fin": "HoraFinal",
         "tipo de cargue": "TipoCargue", "tipo cargue": "TipoCargue",
+        "tipo de carga": "TipoCargue", "tipo carga": "TipoCargue",
         "tipo vh": "TipoVh", "tipo vehiculo": "TipoVh", "tipo vehículo": "TipoVh",
         "t.m minutos": "TM", "tm minutos": "TM", "t.m. minutos": "TM",
         "tiempo muerto": "TM", "t.m minuto": "TM", "t.m minutos ": "TM",
@@ -161,16 +169,40 @@ def cargar_datos(file, nombre):
             f"Encabezados encontrados: {list(df.columns)}"
         )
 
+    # Helpers que NO rompen si la columna no existe (devuelven una Serie de NaN
+    # con el índice correcto en vez de None).
+    def col_num(nombre):
+        if nombre in df.columns:
+            return pd.to_numeric(df[nombre], errors="coerce")
+        return pd.Series(pd.NA, index=df.index, dtype="float64")
+
+    def col_txt(nombre):
+        if nombre in df.columns:
+            return df[nombre]
+        return pd.Series(pd.NA, index=df.index, dtype="object")
+
+    # Si faltan columnas esenciales, avisar claramente en vez de reventar
+    faltantes = [c for c in ["Fecha", "HoraInicio", "HoraFinal", "TM"]
+                 if c not in df.columns]
+    if faltantes:
+        st.error(
+            "El archivo de datos no tiene las columnas esperadas: "
+            f"faltan {faltantes}. Encabezados leídos: {list(df.columns)}. "
+            "Revisa que el CSV use coma como separador y que los nombres de "
+            "columna coincidan (ej. 'T.M Minutos', 'Hora Inicio', 'Hora Final')."
+        )
+        st.stop()
+
     # Tipos
-    df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True, errors="coerce")
-    df["IniMin"] = df["HoraInicio"].apply(parse_hora)
-    df["FinMin"] = df["HoraFinal"].apply(parse_hora)
-    df["TM"] = pd.to_numeric(df.get("TM"), errors="coerce").fillna(0)
-    df["Personas"] = pd.to_numeric(df.get("Personas"), errors="coerce").astype("Int64")
+    df["Fecha"] = pd.to_datetime(col_txt("Fecha"), dayfirst=True, errors="coerce")
+    df["IniMin"] = col_txt("HoraInicio").apply(parse_hora)
+    df["FinMin"] = col_txt("HoraFinal").apply(parse_hora)
+    df["TM"] = col_num("TM").fillna(0)
+    df["Personas"] = col_num("Personas").astype("Int64")
     # Cantidad cargada (opcional): si no existe la columna, queda como NaN
-    df["Cantidad"] = pd.to_numeric(df.get("Cantidad"), errors="coerce")
+    df["Cantidad"] = col_num("Cantidad")
     # Estibas reales (opcional): si no existe la columna, queda como NaN
-    df["EstibasReal"] = pd.to_numeric(df.get("Estibas"), errors="coerce")
+    df["EstibasReal"] = col_num("Estibas")
 
     # Muelle como entero limpio (evita '1.0', '2.0'): a número, luego a entero,
     # y a texto sin decimales para mostrar y filtrar.
