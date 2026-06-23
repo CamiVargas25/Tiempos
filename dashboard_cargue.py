@@ -19,6 +19,7 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, date
@@ -185,12 +186,12 @@ def cargar_datos(file, nombre):
     def col_num(nombre):
         if nombre in df.columns:
             return pd.to_numeric(df[nombre], errors="coerce")
-        return pd.Series(pd.NA, index=df.index, dtype="float64")
+        return pd.Series(np.nan, index=df.index, dtype="float64")
 
     def col_txt(nombre):
         if nombre in df.columns:
             return df[nombre]
-        return pd.Series(pd.NA, index=df.index, dtype="object")
+        return pd.Series([None] * len(df), index=df.index, dtype="object")
 
     # Si faltan columnas esenciales, avisar claramente en vez de reventar
     faltantes = [c for c in ["Fecha", "HoraInicio", "HoraFinal", "TM"]
