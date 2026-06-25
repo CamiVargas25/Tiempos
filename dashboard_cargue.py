@@ -396,15 +396,20 @@ if len(dt_tend):
                 .agg(valor=("TotalMin", agg_func), viajes=("TotalMin", "size"))
                 .reset_index().rename(columns={"Fecha": "Dia"}))
         gdia = gdia.sort_values("Dia")
-        gdia["DiaTxt"] = pd.to_datetime(gdia["Dia"]).dt.strftime("%d/%m")
+        # Inicial del día de la semana en español (L, M, X, J, V, S, D)
+        DIA_INI = {0: "L", 1: "M", 2: "X", 3: "J", 4: "V", 5: "S", 6: "D"}
+        fechas_dt = pd.to_datetime(gdia["Dia"])
+        gdia["DiaTxt"] = (fechas_dt.dt.strftime("%d/%m") + "<br>"
+                          + fechas_dt.dt.dayofweek.map(DIA_INI))
         gdia["Horas"] = gdia["valor"].apply(dur_a_horas)
         figd = go.Figure()
         figd.add_trace(go.Scatter(
             x=gdia["DiaTxt"], y=gdia["valor"], mode="lines+markers",
             line=dict(color=COL["azul"], width=2),
             marker=dict(size=8, color=COL["azul"]),
-            customdata=list(zip(gdia["viajes"], gdia["Horas"])),
-            hovertemplate=("%{x}<br>%{y:.0f} min (%{customdata[1]})"
+            customdata=list(zip(gdia["viajes"], gdia["Horas"],
+                                fechas_dt.dt.strftime("%d/%m/%Y"))),
+            hovertemplate=("%{customdata[2]}<br>%{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
         # Etiqueta con el tiempo en minutos encima de cada punto
