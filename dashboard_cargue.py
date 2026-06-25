@@ -407,10 +407,10 @@ if len(dt_tend):
             hovertemplate=("%{x}<br>%{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
-        # Etiqueta con nº de viajes encima de cada punto
+        # Etiqueta con el tiempo en minutos encima de cada punto
         figd.add_trace(go.Scatter(
             x=gdia["DiaTxt"], y=gdia["valor"], mode="text",
-            text=gdia["viajes"].astype(str) + " viajes",
+            text=gdia["valor"].round(0).astype(int).astype(str) + " min",
             textposition="top center", textfont=dict(size=9, color=COL["gris"]),
             showlegend=False, hoverinfo="skip"))
         figd.update_layout(
@@ -440,7 +440,7 @@ if len(dt_tend):
         ))
         figs.add_trace(go.Scatter(
             x=gsem["SemTxt"], y=gsem["valor"], mode="text",
-            text=gsem["viajes"].astype(str) + " viajes",
+            text=gsem["valor"].round(0).astype(int).astype(str) + " min",
             textposition="top center", textfont=dict(size=9, color=COL["gris"]),
             showlegend=False, hoverinfo="skip"))
         figs.update_layout(
