@@ -372,9 +372,16 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ------------------------------------------------------------------------------
 # TENDENCIAS: TIEMPO DE CARGUE DÍA A DÍA Y POR SEMANA (con toggle promedios)
 # ------------------------------------------------------------------------------
-enc_t, enc_chk = st.columns([3, 1])
+enc_t, enc_vh, enc_chk = st.columns([2, 1.3, 1])
 with enc_t:
     st.subheader("Tendencia del tiempo de cargue")
+with enc_vh:
+    vh_tend_opts = ["Todos"] + sorted(
+        [v for v in df_f["TipoVh"].dropna().unique()],
+        key=lambda x: (["Sencillo", "Doble Troque", "Mula"].index(x)
+                       if x in ["Sencillo", "Doble Troque", "Mula"] else 99))
+    vh_tend = st.selectbox("Tipo de vehículo", vh_tend_opts, index=0,
+                           key="vh_tendencia")
 with enc_chk:
     ver_promedios = st.checkbox("Promedios por cargue", value=False,
                                 help="Activa para ver el promedio por cargue en vez "
@@ -382,6 +389,9 @@ with enc_chk:
 
 # Base: cargues con tiempo total válido (incluye tiempo muerto)
 dt_tend = df_f[df_f["TotalMin"].notna() & (df_f["TotalMin"] > 0)].copy()
+# Filtro de tipo de vehículo propio de esta sección
+if vh_tend != "Todos":
+    dt_tend = dt_tend[dt_tend["TipoVh"] == vh_tend]
 
 if len(dt_tend):
     modo_lbl = "Promedio por cargue" if ver_promedios else "Total acumulado"
@@ -422,6 +432,17 @@ if len(dt_tend):
             plot_bgcolor="white", height=320, margin=dict(t=20), showlegend=False,
             yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
             xaxis=dict(type="category"))
+        # Banda de variación entre días: promedio ± 1 desviación estándar
+        if len(gdia) >= 2:
+            media_d = gdia["valor"].mean()
+            std_d = gdia["valor"].std()  # std muestral (entre días)
+            xcats = gdia["DiaTxt"].tolist()
+            figd.add_hrect(y0=media_d - std_d, y1=media_d + std_d,
+                           fillcolor=COL["azul"], opacity=0.08, line_width=0)
+            figd.add_hline(y=media_d, line=dict(color=COL["azul"], dash="dot", width=1),
+                           annotation_text=f"μ {media_d:.0f} · σ {std_d:.0f} min",
+                           annotation_position="top left",
+                           annotation_font=dict(size=10, color=COL["azul"]))
         st.plotly_chart(figd, use_container_width=True)
 
     # --- Gráfico semanal (semana ISO del año) ---
@@ -452,13 +473,29 @@ if len(dt_tend):
             plot_bgcolor="white", height=320, margin=dict(t=20), showlegend=False,
             yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
             xaxis=dict(type="category"))
+        # Banda de variación entre semanas: promedio ± 1 desviación estándar
+        if len(gsem) >= 2:
+            media_s = gsem["valor"].mean()
+            std_s = gsem["valor"].std()
+            figs.add_hrect(y0=media_s - std_s, y1=media_s + std_s,
+                           fillcolor=COL["verde"], opacity=0.08, line_width=0)
+            figs.add_hline(y=media_s, line=dict(color=COL["verde"], dash="dot", width=1),
+                           annotation_text=f"μ {media_s:.0f} · σ {std_s:.0f} min",
+                           annotation_position="top left",
+                           annotation_font=dict(size=10, color=COL["verde"]))
         st.plotly_chart(figs, use_container_width=True)
 
     st.caption(
-        f"Tiempo de cargue **incluyendo tiempos muertos** ({modo_lbl.lower()}). "
+        f"Tiempo de cargue **incluyendo tiempos muertos** ({modo_lbl.lower()}) · "
+        f"vehículo: **{vh_tend}**. "
         "Marca «Promedios por cargue» para ver el promedio por viaje en lugar del "
         "total. Los días o semanas sin registros no se muestran (la línea salta al "
-        "siguiente con datos).")
+        "siguiente con datos). La **banda sombreada** es el promedio ± 1 desviación "
+        "estándar (μ ± σ): mientras más puntos caigan fuera de ella, más errática es "
+        "la serie de un período a otro.")
+else:
+    st.info(f"No hay cargues de tipo «{vh_tend}» con tiempo válido en el periodo "
+            "seleccionado.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
