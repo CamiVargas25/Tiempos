@@ -396,6 +396,12 @@ lbl_principal = "Tiempo neto" if ver_neto else "Tiempo total"
 
 # Base: cargues con tiempo total válido (incluye tiempo muerto)
 dt_tend = df_f[df_f["TotalMin"].notna() & (df_f["TotalMin"] > 0)].copy()
+# Excluir cargues que terminan después de las 17:30: su tiempo muerto (y por tanto
+# el neto) no es confiable porque quien registra suele retirarse a esa hora.
+LIM_1730 = 17 * 60 + 30
+antes_1730 = len(dt_tend)
+dt_tend = dt_tend[dt_tend["FinMin"].notna() & (dt_tend["FinMin"] <= LIM_1730)]
+excluidos_1730 = antes_1730 - len(dt_tend)
 # Filtro de tipo de vehículo propio de esta sección
 if vh_tend != "Todos":
     dt_tend = dt_tend[dt_tend["TipoVh"] == vh_tend]
@@ -510,7 +516,8 @@ if len(dt_tend):
         + desc_lineas +
         " Marca «Promedios por cargue» para ver el promedio por viaje y «Usar tiempo "
         "neto» para cambiar la línea principal. Los días o semanas sin registros no "
-        "se muestran.")
+        "se muestran. Se excluyen los cargues que terminan después de las 17:30 "
+        "(tiempo muerto no confiable a esa hora).")
 else:
     st.info(f"No hay cargues de tipo «{vh_tend}» con tiempo válido en el periodo "
             "seleccionado.")
