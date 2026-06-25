@@ -403,7 +403,8 @@ if len(dt_tend):
     with colD1:
         st.markdown("**Día a día**")
         gdia = (dt_tend.groupby(dt_tend["Fecha"].dt.date)
-                .agg(valor=("TotalMin", agg_func), viajes=("TotalMin", "size"))
+                .agg(valor=("TotalMin", agg_func), muerto=("TM", agg_func),
+                     viajes=("TotalMin", "size"))
                 .reset_index().rename(columns={"Fecha": "Dia"}))
         gdia = gdia.sort_values("Dia")
         # Inicial del día de la semana en español (L, M, X, J, V, S, D)
@@ -412,37 +413,37 @@ if len(dt_tend):
         gdia["DiaTxt"] = (fechas_dt.dt.strftime("%d/%m") + "<br>"
                           + fechas_dt.dt.dayofweek.map(DIA_INI))
         gdia["Horas"] = gdia["valor"].apply(dur_a_horas)
+        gdia["HorasM"] = gdia["muerto"].apply(dur_a_horas)
         figd = go.Figure()
         figd.add_trace(go.Scatter(
             x=gdia["DiaTxt"], y=gdia["valor"], mode="lines+markers",
-            line=dict(color=COL["azul"], width=2),
+            name="Tiempo total", line=dict(color=COL["azul"], width=2),
             marker=dict(size=8, color=COL["azul"]),
             customdata=list(zip(gdia["viajes"], gdia["Horas"],
                                 fechas_dt.dt.strftime("%d/%m/%Y"))),
-            hovertemplate=("%{customdata[2]}<br>%{y:.0f} min (%{customdata[1]})"
+            hovertemplate=("%{customdata[2]}<br>Total: %{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
-        # Etiqueta con el tiempo en minutos encima de cada punto
+        # Línea de tiempo muerto
+        figd.add_trace(go.Scatter(
+            x=gdia["DiaTxt"], y=gdia["muerto"], mode="lines+markers",
+            name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
+            marker=dict(size=7, color=COL["rojo"]),
+            customdata=list(zip(gdia["HorasM"], fechas_dt.dt.strftime("%d/%m/%Y"))),
+            hovertemplate=("%{customdata[1]}<br>Muerto: %{y:.0f} min (%{customdata[0]})"
+                           "<extra></extra>"),
+        ))
+        # Etiqueta con el tiempo total en minutos encima de cada punto
         figd.add_trace(go.Scatter(
             x=gdia["DiaTxt"], y=gdia["valor"], mode="text",
             text=gdia["valor"].round(0).astype(int).astype(str) + " min",
             textposition="top center", textfont=dict(size=9, color=COL["gris"]),
             showlegend=False, hoverinfo="skip"))
         figd.update_layout(
-            plot_bgcolor="white", height=320, margin=dict(t=20), showlegend=False,
+            plot_bgcolor="white", height=340, margin=dict(t=20),
+            legend=dict(orientation="h", y=1.12),
             yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
             xaxis=dict(type="category"))
-        # Banda de variación entre días: promedio ± 1 desviación estándar
-        if len(gdia) >= 2:
-            media_d = gdia["valor"].mean()
-            std_d = gdia["valor"].std()  # std muestral (entre días)
-            xcats = gdia["DiaTxt"].tolist()
-            figd.add_hrect(y0=media_d - std_d, y1=media_d + std_d,
-                           fillcolor=COL["azul"], opacity=0.08, line_width=0)
-            figd.add_hline(y=media_d, line=dict(color=COL["azul"], dash="dot", width=1),
-                           annotation_text=f"μ {media_d:.0f} · σ {std_d:.0f} min",
-                           annotation_position="top left",
-                           annotation_font=dict(size=10, color=COL["azul"]))
         st.plotly_chart(figd, use_container_width=True)
 
     # --- Gráfico semanal (semana ISO del año) ---
@@ -451,18 +452,28 @@ if len(dt_tend):
         iso = dt_tend["Fecha"].dt.isocalendar()
         dt_tend["SemKey"] = iso["year"].astype(str) + "-S" + iso["week"].astype(str).str.zfill(2)
         gsem = (dt_tend.groupby("SemKey")
-                .agg(valor=("TotalMin", agg_func), viajes=("TotalMin", "size"))
+                .agg(valor=("TotalMin", agg_func), muerto=("TM", agg_func),
+                     viajes=("TotalMin", "size"))
                 .reset_index().sort_values("SemKey"))
         gsem["SemTxt"] = "Sem " + gsem["SemKey"].str.split("-S").str[1]
         gsem["Horas"] = gsem["valor"].apply(dur_a_horas)
+        gsem["HorasM"] = gsem["muerto"].apply(dur_a_horas)
         figs = go.Figure()
         figs.add_trace(go.Scatter(
             x=gsem["SemTxt"], y=gsem["valor"], mode="lines+markers",
-            line=dict(color=COL["verde"], width=2),
+            name="Tiempo total", line=dict(color=COL["verde"], width=2),
             marker=dict(size=8, color=COL["verde"]),
             customdata=list(zip(gsem["viajes"], gsem["Horas"])),
-            hovertemplate=("%{x}<br>%{y:.0f} min (%{customdata[1]})"
+            hovertemplate=("%{x}<br>Total: %{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
+        ))
+        # Línea de tiempo muerto
+        figs.add_trace(go.Scatter(
+            x=gsem["SemTxt"], y=gsem["muerto"], mode="lines+markers",
+            name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
+            marker=dict(size=7, color=COL["rojo"]),
+            customdata=list(zip(gsem["HorasM"],)),
+            hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata[0]})<extra></extra>",
         ))
         figs.add_trace(go.Scatter(
             x=gsem["SemTxt"], y=gsem["valor"], mode="text",
@@ -470,29 +481,19 @@ if len(dt_tend):
             textposition="top center", textfont=dict(size=9, color=COL["gris"]),
             showlegend=False, hoverinfo="skip"))
         figs.update_layout(
-            plot_bgcolor="white", height=320, margin=dict(t=20), showlegend=False,
+            plot_bgcolor="white", height=340, margin=dict(t=20),
+            legend=dict(orientation="h", y=1.12),
             yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
             xaxis=dict(type="category"))
-        # Banda de variación entre semanas: promedio ± 1 desviación estándar
-        if len(gsem) >= 2:
-            media_s = gsem["valor"].mean()
-            std_s = gsem["valor"].std()
-            figs.add_hrect(y0=media_s - std_s, y1=media_s + std_s,
-                           fillcolor=COL["verde"], opacity=0.08, line_width=0)
-            figs.add_hline(y=media_s, line=dict(color=COL["verde"], dash="dot", width=1),
-                           annotation_text=f"μ {media_s:.0f} · σ {std_s:.0f} min",
-                           annotation_position="top left",
-                           annotation_font=dict(size=10, color=COL["verde"]))
         st.plotly_chart(figs, use_container_width=True)
 
     st.caption(
-        f"Tiempo de cargue **incluyendo tiempos muertos** ({modo_lbl.lower()}) · "
-        f"vehículo: **{vh_tend}**. "
-        "Marca «Promedios por cargue» para ver el promedio por viaje en lugar del "
-        "total. Los días o semanas sin registros no se muestran (la línea salta al "
-        "siguiente con datos). La **banda sombreada** es el promedio ± 1 desviación "
-        "estándar (μ ± σ): mientras más puntos caigan fuera de ella, más errática es "
-        "la serie de un período a otro.")
+        f"Tiempo de cargue ({modo_lbl.lower()}) · vehículo: **{vh_tend}**. "
+        "La línea principal es el **tiempo total** (incluye tiempos muertos) y la roja "
+        "es el **tiempo muerto**: la distancia entre ambas es el trabajo efectivo de "
+        "cargue. Si las líneas se acercan, casi todo el tiempo fue espera; si se "
+        "separan, el cargue avanzó. Marca «Promedios por cargue» para ver el promedio "
+        "por viaje. Los días o semanas sin registros no se muestran.")
 else:
     st.info(f"No hay cargues de tipo «{vh_tend}» con tiempo válido en el periodo "
             "seleccionado.")
