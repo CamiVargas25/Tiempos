@@ -372,7 +372,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ------------------------------------------------------------------------------
 # TENDENCIAS: TIEMPO DE CARGUE DÍA A DÍA Y POR SEMANA (con toggle promedios)
 # ------------------------------------------------------------------------------
-enc_t, enc_vh, enc_chk = st.columns([2, 1.3, 1])
+enc_t, enc_vh, enc_chk = st.columns([1.7, 1.3, 1.3])
 with enc_t:
     st.subheader("Tendencia del tiempo de cargue")
 with enc_vh:
@@ -386,6 +386,13 @@ with enc_chk:
     ver_promedios = st.checkbox("Promedios por cargue", value=False,
                                 help="Activa para ver el promedio por cargue en vez "
                                      "del total acumulado.")
+    ver_neto = st.checkbox("Usar tiempo neto", value=False,
+                           help="Cambia la línea principal de tiempo total (con "
+                                "muertos) a tiempo neto (solo trabajo de cargue).")
+
+# Columna y etiqueta de la línea principal según el toggle de neto
+col_principal = "NetoMin" if ver_neto else "TotalMin"
+lbl_principal = "Tiempo neto" if ver_neto else "Tiempo total"
 
 # Base: cargues con tiempo total válido (incluye tiempo muerto)
 dt_tend = df_f[df_f["TotalMin"].notna() & (df_f["TotalMin"] > 0)].copy()
@@ -403,7 +410,7 @@ if len(dt_tend):
     with colD1:
         st.markdown("**Día a día**")
         gdia = (dt_tend.groupby(dt_tend["Fecha"].dt.date)
-                .agg(valor=("TotalMin", agg_func), muerto=("TM", agg_func),
+                .agg(valor=(col_principal, agg_func), muerto=("TM", agg_func),
                      viajes=("TotalMin", "size"))
                 .reset_index().rename(columns={"Fecha": "Dia"}))
         gdia = gdia.sort_values("Dia")
@@ -417,11 +424,12 @@ if len(dt_tend):
         figd = go.Figure()
         figd.add_trace(go.Scatter(
             x=gdia["DiaTxt"], y=gdia["valor"], mode="lines+markers",
-            name="Tiempo total", line=dict(color=COL["azul"], width=2),
+            name=lbl_principal, line=dict(color=COL["azul"], width=2),
             marker=dict(size=8, color=COL["azul"]),
             customdata=list(zip(gdia["viajes"], gdia["Horas"],
                                 fechas_dt.dt.strftime("%d/%m/%Y"))),
-            hovertemplate=("%{customdata[2]}<br>Total: %{y:.0f} min (%{customdata[1]})"
+            hovertemplate=("%{customdata[2]}<br>" + lbl_principal +
+                           ": %{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
         # Línea de tiempo muerto
@@ -452,7 +460,7 @@ if len(dt_tend):
         iso = dt_tend["Fecha"].dt.isocalendar()
         dt_tend["SemKey"] = iso["year"].astype(str) + "-S" + iso["week"].astype(str).str.zfill(2)
         gsem = (dt_tend.groupby("SemKey")
-                .agg(valor=("TotalMin", agg_func), muerto=("TM", agg_func),
+                .agg(valor=(col_principal, agg_func), muerto=("TM", agg_func),
                      viajes=("TotalMin", "size"))
                 .reset_index().sort_values("SemKey"))
         gsem["SemTxt"] = "Sem " + gsem["SemKey"].str.split("-S").str[1]
@@ -461,10 +469,11 @@ if len(dt_tend):
         figs = go.Figure()
         figs.add_trace(go.Scatter(
             x=gsem["SemTxt"], y=gsem["valor"], mode="lines+markers",
-            name="Tiempo total", line=dict(color=COL["verde"], width=2),
+            name=lbl_principal, line=dict(color=COL["verde"], width=2),
             marker=dict(size=8, color=COL["verde"]),
             customdata=list(zip(gsem["viajes"], gsem["Horas"])),
-            hovertemplate=("%{x}<br>Total: %{y:.0f} min (%{customdata[1]})"
+            hovertemplate=("%{x}<br>" + lbl_principal +
+                           ": %{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
         # Línea de tiempo muerto
@@ -487,13 +496,20 @@ if len(dt_tend):
             xaxis=dict(type="category"))
         st.plotly_chart(figs, use_container_width=True)
 
+    if ver_neto:
+        desc_lineas = ("La línea principal es el **tiempo neto** (solo trabajo de "
+                       "cargue, sin esperas) y la roja es el **tiempo muerto**; "
+                       "sumadas dan el tiempo total en muelle.")
+    else:
+        desc_lineas = ("La línea principal es el **tiempo total** (incluye tiempos "
+                       "muertos) y la roja es el **tiempo muerto**: la distancia entre "
+                       "ambas es el trabajo efectivo de cargue.")
     st.caption(
-        f"Tiempo de cargue ({modo_lbl.lower()}) · vehículo: **{vh_tend}**. "
-        "La línea principal es el **tiempo total** (incluye tiempos muertos) y la roja "
-        "es el **tiempo muerto**: la distancia entre ambas es el trabajo efectivo de "
-        "cargue. Si las líneas se acercan, casi todo el tiempo fue espera; si se "
-        "separan, el cargue avanzó. Marca «Promedios por cargue» para ver el promedio "
-        "por viaje. Los días o semanas sin registros no se muestran.")
+        f"Tendencia ({modo_lbl.lower()}) · vehículo: **{vh_tend}**. "
+        + desc_lineas +
+        " Marca «Promedios por cargue» para ver el promedio por viaje y «Usar tiempo "
+        "neto» para cambiar la línea principal. Los días o semanas sin registros no "
+        "se muestran.")
 else:
     st.info(f"No hay cargues de tipo «{vh_tend}» con tiempo válido en el periodo "
             "seleccionado.")
