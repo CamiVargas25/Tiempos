@@ -370,6 +370,95 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------------------
+# TENDENCIAS: TIEMPO DE CARGUE DÍA A DÍA Y POR SEMANA (con toggle promedios)
+# ------------------------------------------------------------------------------
+enc_t, enc_chk = st.columns([3, 1])
+with enc_t:
+    st.subheader("Tendencia del tiempo de cargue")
+with enc_chk:
+    ver_promedios = st.checkbox("Promedios por cargue", value=False,
+                                help="Activa para ver el promedio por cargue en vez "
+                                     "del total acumulado.")
+
+# Base: cargues con tiempo total válido (incluye tiempo muerto)
+dt_tend = df_f[df_f["TotalMin"].notna() & (df_f["TotalMin"] > 0)].copy()
+
+if len(dt_tend):
+    modo_lbl = "Promedio por cargue" if ver_promedios else "Total acumulado"
+    agg_func = "mean" if ver_promedios else "sum"
+
+    colD1, colD2 = st.columns(2)
+
+    # --- Gráfico diario ---
+    with colD1:
+        st.markdown("**Día a día**")
+        gdia = (dt_tend.groupby(dt_tend["Fecha"].dt.date)
+                .agg(valor=("TotalMin", agg_func), viajes=("TotalMin", "size"))
+                .reset_index().rename(columns={"Fecha": "Dia"}))
+        gdia = gdia.sort_values("Dia")
+        gdia["DiaTxt"] = pd.to_datetime(gdia["Dia"]).dt.strftime("%d/%m")
+        gdia["Horas"] = gdia["valor"].apply(dur_a_horas)
+        figd = go.Figure()
+        figd.add_trace(go.Scatter(
+            x=gdia["DiaTxt"], y=gdia["valor"], mode="lines+markers",
+            line=dict(color=COL["azul"], width=2),
+            marker=dict(size=8, color=COL["azul"]),
+            customdata=list(zip(gdia["viajes"], gdia["Horas"])),
+            hovertemplate=("%{x}<br>%{y:.0f} min (%{customdata[1]})"
+                           "<br>%{customdata[0]} viajes<extra></extra>"),
+        ))
+        # Etiqueta con nº de viajes encima de cada punto
+        figd.add_trace(go.Scatter(
+            x=gdia["DiaTxt"], y=gdia["valor"], mode="text",
+            text=gdia["viajes"].astype(str) + " viajes",
+            textposition="top center", textfont=dict(size=9, color=COL["gris"]),
+            showlegend=False, hoverinfo="skip"))
+        figd.update_layout(
+            plot_bgcolor="white", height=320, margin=dict(t=20), showlegend=False,
+            yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
+            xaxis=dict(type="category"))
+        st.plotly_chart(figd, use_container_width=True)
+
+    # --- Gráfico semanal (semana ISO del año) ---
+    with colD2:
+        st.markdown("**Por semana del año**")
+        iso = dt_tend["Fecha"].dt.isocalendar()
+        dt_tend["SemKey"] = iso["year"].astype(str) + "-S" + iso["week"].astype(str).str.zfill(2)
+        gsem = (dt_tend.groupby("SemKey")
+                .agg(valor=("TotalMin", agg_func), viajes=("TotalMin", "size"))
+                .reset_index().sort_values("SemKey"))
+        gsem["SemTxt"] = "Sem " + gsem["SemKey"].str.split("-S").str[1]
+        gsem["Horas"] = gsem["valor"].apply(dur_a_horas)
+        figs = go.Figure()
+        figs.add_trace(go.Scatter(
+            x=gsem["SemTxt"], y=gsem["valor"], mode="lines+markers",
+            line=dict(color=COL["verde"], width=2),
+            marker=dict(size=8, color=COL["verde"]),
+            customdata=list(zip(gsem["viajes"], gsem["Horas"])),
+            hovertemplate=("%{x}<br>%{y:.0f} min (%{customdata[1]})"
+                           "<br>%{customdata[0]} viajes<extra></extra>"),
+        ))
+        figs.add_trace(go.Scatter(
+            x=gsem["SemTxt"], y=gsem["valor"], mode="text",
+            text=gsem["viajes"].astype(str) + " viajes",
+            textposition="top center", textfont=dict(size=9, color=COL["gris"]),
+            showlegend=False, hoverinfo="skip"))
+        figs.update_layout(
+            plot_bgcolor="white", height=320, margin=dict(t=20), showlegend=False,
+            yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
+            xaxis=dict(type="category"))
+        st.plotly_chart(figs, use_container_width=True)
+
+    st.caption(
+        f"Tiempo de cargue **incluyendo tiempos muertos** ({modo_lbl.lower()}). "
+        "Marca «Promedios por cargue» para ver el promedio por viaje en lugar del "
+        "total. Los días o semanas sin registros no se muestran (la línea salta al "
+        "siguiente con datos).")
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+
+# ------------------------------------------------------------------------------
 # FILA 1: PARETO DE CAUSAS  +  IMPACTO EN MINUTOS POR CAUSA
 # ------------------------------------------------------------------------------
 colA, colB = st.columns(2)
