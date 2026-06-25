@@ -432,15 +432,16 @@ if len(dt_tend):
                            ": %{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
-        # Línea de tiempo muerto
-        figd.add_trace(go.Scatter(
-            x=gdia["DiaTxt"], y=gdia["muerto"], mode="lines+markers",
-            name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
-            marker=dict(size=7, color=COL["rojo"]),
-            customdata=list(zip(gdia["HorasM"], fechas_dt.dt.strftime("%d/%m/%Y"))),
-            hovertemplate=("%{customdata[1]}<br>Muerto: %{y:.0f} min (%{customdata[0]})"
-                           "<extra></extra>"),
-        ))
+        # Línea de tiempo muerto (solo cuando la línea principal es el total)
+        if not ver_neto:
+            figd.add_trace(go.Scatter(
+                x=gdia["DiaTxt"], y=gdia["muerto"], mode="lines+markers",
+                name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
+                marker=dict(size=7, color=COL["rojo"]),
+                customdata=list(zip(gdia["HorasM"], fechas_dt.dt.strftime("%d/%m/%Y"))),
+                hovertemplate=("%{customdata[1]}<br>Muerto: %{y:.0f} min (%{customdata[0]})"
+                               "<extra></extra>"),
+            ))
         # Etiqueta con el tiempo total en minutos encima de cada punto
         figd.add_trace(go.Scatter(
             x=gdia["DiaTxt"], y=gdia["valor"], mode="text",
@@ -476,14 +477,15 @@ if len(dt_tend):
                            ": %{y:.0f} min (%{customdata[1]})"
                            "<br>%{customdata[0]} viajes<extra></extra>"),
         ))
-        # Línea de tiempo muerto
-        figs.add_trace(go.Scatter(
-            x=gsem["SemTxt"], y=gsem["muerto"], mode="lines+markers",
-            name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
-            marker=dict(size=7, color=COL["rojo"]),
-            customdata=list(zip(gsem["HorasM"],)),
-            hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata[0]})<extra></extra>",
-        ))
+        # Línea de tiempo muerto (solo cuando la línea principal es el total)
+        if not ver_neto:
+            figs.add_trace(go.Scatter(
+                x=gsem["SemTxt"], y=gsem["muerto"], mode="lines+markers",
+                name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
+                marker=dict(size=7, color=COL["rojo"]),
+                customdata=list(zip(gsem["HorasM"],)),
+                hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata[0]})<extra></extra>",
+            ))
         figs.add_trace(go.Scatter(
             x=gsem["SemTxt"], y=gsem["valor"], mode="text",
             text=gsem["valor"].round(0).astype(int).astype(str) + " min",
@@ -497,9 +499,8 @@ if len(dt_tend):
         st.plotly_chart(figs, use_container_width=True)
 
     if ver_neto:
-        desc_lineas = ("La línea principal es el **tiempo neto** (solo trabajo de "
-                       "cargue, sin esperas) y la roja es el **tiempo muerto**; "
-                       "sumadas dan el tiempo total en muelle.")
+        desc_lineas = ("Se muestra solo el **tiempo neto** (trabajo efectivo de "
+                       "cargue, sin esperas ni tiempos muertos).")
     else:
         desc_lineas = ("La línea principal es el **tiempo total** (incluye tiempos "
                        "muertos) y la roja es el **tiempo muerto**: la distancia entre "
