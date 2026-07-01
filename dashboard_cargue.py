@@ -370,162 +370,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------------------
-# TENDENCIAS: TIEMPO DE CARGUE DÍA A DÍA Y POR SEMANA (con toggle promedios)
-# ------------------------------------------------------------------------------
-enc_t, enc_vh, enc_chk = st.columns([1.7, 1.3, 1.3])
-with enc_t:
-    st.subheader("Tendencia del tiempo de cargue")
-with enc_vh:
-    vh_tend_opts = ["Todos"] + sorted(
-        [v for v in df_f["TipoVh"].dropna().unique()],
-        key=lambda x: (["Sencillo", "Doble Troque", "Mula"].index(x)
-                       if x in ["Sencillo", "Doble Troque", "Mula"] else 99))
-    vh_tend = st.selectbox("Tipo de vehículo", vh_tend_opts, index=0,
-                           key="vh_tendencia")
-with enc_chk:
-    ver_promedios = st.checkbox("Promedios por cargue", value=False,
-                                help="Activa para ver el promedio por cargue en vez "
-                                     "del total acumulado.")
-    ver_neto = st.checkbox("Usar tiempo neto", value=False,
-                           help="Cambia la línea principal de tiempo total (con "
-                                "muertos) a tiempo neto (solo trabajo de cargue).")
-
-# Columna y etiqueta de la línea principal según el toggle de neto
-col_principal = "NetoMin" if ver_neto else "TotalMin"
-lbl_principal = "Tiempo neto" if ver_neto else "Tiempo total"
-
-# Base: cargues con tiempo total válido (incluye tiempo muerto)
-dt_tend = df_f[df_f["TotalMin"].notna() & (df_f["TotalMin"] > 0)].copy()
-# Excluir cargues que terminan después de las 17:30: su tiempo muerto (y por tanto
-# el neto) no es confiable porque quien registra suele retirarse a esa hora.
-LIM_1730 = 17 * 60 + 30
-antes_1730 = len(dt_tend)
-dt_tend = dt_tend[dt_tend["FinMin"].notna() & (dt_tend["FinMin"] <= LIM_1730)]
-excluidos_1730 = antes_1730 - len(dt_tend)
-# Filtro de tipo de vehículo propio de esta sección
-if vh_tend != "Todos":
-    dt_tend = dt_tend[dt_tend["TipoVh"] == vh_tend]
-
-if len(dt_tend):
-    modo_lbl = "Promedio por cargue" if ver_promedios else "Total acumulado"
-    agg_func = "mean" if ver_promedios else "sum"
-
-    colD1, colD2 = st.columns(2)
-
-    # --- Gráfico diario ---
-    with colD1:
-        st.markdown("**Día a día**")
-        gdia = (dt_tend.groupby(dt_tend["Fecha"].dt.date)
-                .agg(valor=(col_principal, agg_func), muerto=("TM", agg_func),
-                     viajes=("TotalMin", "size"))
-                .reset_index().rename(columns={"Fecha": "Dia"}))
-        gdia = gdia.sort_values("Dia")
-        # Inicial del día de la semana en español (L, M, X, J, V, S, D)
-        DIA_INI = {0: "L", 1: "M", 2: "X", 3: "J", 4: "V", 5: "S", 6: "D"}
-        fechas_dt = pd.to_datetime(gdia["Dia"])
-        gdia["DiaTxt"] = (fechas_dt.dt.strftime("%d/%m") + "<br>"
-                          + fechas_dt.dt.dayofweek.map(DIA_INI))
-        gdia["Horas"] = gdia["valor"].apply(dur_a_horas)
-        gdia["HorasM"] = gdia["muerto"].apply(dur_a_horas)
-        figd = go.Figure()
-        figd.add_trace(go.Scatter(
-            x=gdia["DiaTxt"], y=gdia["valor"], mode="lines+markers",
-            name=lbl_principal, line=dict(color=COL["azul"], width=2),
-            marker=dict(size=8, color=COL["azul"]),
-            customdata=list(zip(gdia["viajes"], gdia["Horas"],
-                                fechas_dt.dt.strftime("%d/%m/%Y"))),
-            hovertemplate=("%{customdata[2]}<br>" + lbl_principal +
-                           ": %{y:.0f} min (%{customdata[1]})"
-                           "<br>%{customdata[0]} viajes<extra></extra>"),
-        ))
-        # Línea de tiempo muerto (solo cuando la línea principal es el total)
-        if not ver_neto:
-            figd.add_trace(go.Scatter(
-                x=gdia["DiaTxt"], y=gdia["muerto"], mode="lines+markers",
-                name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
-                marker=dict(size=7, color=COL["rojo"]),
-                customdata=list(zip(gdia["HorasM"], fechas_dt.dt.strftime("%d/%m/%Y"))),
-                hovertemplate=("%{customdata[1]}<br>Muerto: %{y:.0f} min (%{customdata[0]})"
-                               "<extra></extra>"),
-            ))
-        # Etiqueta con el tiempo total en minutos encima de cada punto
-        figd.add_trace(go.Scatter(
-            x=gdia["DiaTxt"], y=gdia["valor"], mode="text",
-            text=gdia["valor"].round(0).astype(int).astype(str) + " min",
-            textposition="top center", textfont=dict(size=9, color=COL["gris"]),
-            showlegend=False, hoverinfo="skip"))
-        figd.update_layout(
-            plot_bgcolor="white", height=340, margin=dict(t=20),
-            legend=dict(orientation="h", y=1.12),
-            yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
-            xaxis=dict(type="category"))
-        st.plotly_chart(figd, use_container_width=True)
-
-    # --- Gráfico semanal (semana ISO del año) ---
-    with colD2:
-        st.markdown("**Por semana del año**")
-        iso = dt_tend["Fecha"].dt.isocalendar()
-        dt_tend["SemKey"] = iso["year"].astype(str) + "-S" + iso["week"].astype(str).str.zfill(2)
-        gsem = (dt_tend.groupby("SemKey")
-                .agg(valor=(col_principal, agg_func), muerto=("TM", agg_func),
-                     viajes=("TotalMin", "size"))
-                .reset_index().sort_values("SemKey"))
-        gsem["SemTxt"] = "Sem " + gsem["SemKey"].str.split("-S").str[1]
-        gsem["Horas"] = gsem["valor"].apply(dur_a_horas)
-        gsem["HorasM"] = gsem["muerto"].apply(dur_a_horas)
-        figs = go.Figure()
-        figs.add_trace(go.Scatter(
-            x=gsem["SemTxt"], y=gsem["valor"], mode="lines+markers",
-            name=lbl_principal, line=dict(color=COL["verde"], width=2),
-            marker=dict(size=8, color=COL["verde"]),
-            customdata=list(zip(gsem["viajes"], gsem["Horas"])),
-            hovertemplate=("%{x}<br>" + lbl_principal +
-                           ": %{y:.0f} min (%{customdata[1]})"
-                           "<br>%{customdata[0]} viajes<extra></extra>"),
-        ))
-        # Línea de tiempo muerto (solo cuando la línea principal es el total)
-        if not ver_neto:
-            figs.add_trace(go.Scatter(
-                x=gsem["SemTxt"], y=gsem["muerto"], mode="lines+markers",
-                name="Tiempo muerto", line=dict(color=COL["rojo"], width=2),
-                marker=dict(size=7, color=COL["rojo"]),
-                customdata=list(zip(gsem["HorasM"],)),
-                hovertemplate="%{x}<br>Muerto: %{y:.0f} min (%{customdata[0]})<extra></extra>",
-            ))
-        figs.add_trace(go.Scatter(
-            x=gsem["SemTxt"], y=gsem["valor"], mode="text",
-            text=gsem["valor"].round(0).astype(int).astype(str) + " min",
-            textposition="top center", textfont=dict(size=9, color=COL["gris"]),
-            showlegend=False, hoverinfo="skip"))
-        figs.update_layout(
-            plot_bgcolor="white", height=340, margin=dict(t=20),
-            legend=dict(orientation="h", y=1.12),
-            yaxis_title=f"Minutos · {modo_lbl}", xaxis_title="",
-            xaxis=dict(type="category"))
-        st.plotly_chart(figs, use_container_width=True)
-
-    if ver_neto:
-        desc_lineas = ("Se muestra solo el **tiempo neto** (trabajo efectivo de "
-                       "cargue, sin esperas ni tiempos muertos).")
-    else:
-        desc_lineas = ("La línea principal es el **tiempo total** (incluye tiempos "
-                       "muertos) y la roja es el **tiempo muerto**: la distancia entre "
-                       "ambas es el trabajo efectivo de cargue.")
-    st.caption(
-        f"Tendencia ({modo_lbl.lower()}) · vehículo: **{vh_tend}**. "
-        + desc_lineas +
-        " Marca «Promedios por cargue» para ver el promedio por viaje y «Usar tiempo "
-        "neto» para cambiar la línea principal. Los días o semanas sin registros no "
-        "se muestran. Se excluyen los cargues que terminan después de las 17:30 "
-        "(tiempo muerto no confiable a esa hora).")
-else:
-    st.info(f"No hay cargues de tipo «{vh_tend}» con tiempo válido en el periodo "
-            "seleccionado.")
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-
-# ------------------------------------------------------------------------------
 # FILA 1: PARETO DE CAUSAS  +  IMPACTO EN MINUTOS POR CAUSA
 # ------------------------------------------------------------------------------
 colA, colB = st.columns(2)
@@ -879,17 +723,65 @@ if len(dprod):
     k1, k2 = st.columns(2)
     with k1:
         st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['azul']}">
-            <div class="kpi-label">Ritmo de cargue · unidades</div>
+            <div class="kpi-label">Ritmo neto · unidades</div>
             <div class="kpi-value">{und_hora:,.0f} und/h</div>
-            <div class="kpi-sub">producto despachado por hora de trabajo efectivo</div>
+            <div class="kpi-sub">producto ÷ tiempo <b>neto</b> de cargue (sin tiempo muerto)</div>
         </div>""", unsafe_allow_html=True)
     with k2:
         st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['verde']}">
-            <div class="kpi-label">Ritmo de cargue · estibas</div>
+            <div class="kpi-label">Ritmo neto · estibas</div>
             <div class="kpi-value">{est_hora:.1f} estibas/h</div>
-            <div class="kpi-sub">esfuerzo físico de manipulación por hora</div>
+            <div class="kpi-sub">estibas ÷ tiempo <b>neto</b> (esfuerzo físico de la cuadrilla)</div>
         </div>""", unsafe_allow_html=True)
     st.caption(f"ℹ️ Estibas: {nota_estibas}.")
+
+    # --- Ritmo REAL: producto ÷ ventana operativa (incluye tiempos muertos y
+    # muelles vacíos). Denominador = suma de la ventana operativa (primer inicio a
+    # último fin) de cada muelle 1 y 2 por día = muelle-hora de capacidad usada.
+    # Numerador = todo el producto despachado (todos los tipos de carga) en cargues
+    # de muelles 1-2 que terminan a más tardar a las 17:30 (registro confiable).
+    real_base = df_f[df_f["Muelle"].isin(["1", "2"])
+                     & df_f["IniMin"].notna() & df_f["FinMin"].notna()
+                     & df_f["Cantidad"].notna() & (df_f["Cantidad"] > 0)
+                     & (df_f["FinMin"] <= LIMITE_REGISTRO)].copy()
+    if len(real_base):
+        real_base["FinAdj"] = real_base.apply(
+            lambda r: r["FinMin"] + 1440 if r["FinMin"] < r["IniMin"] else r["FinMin"],
+            axis=1)
+        real_base["Fecha_d"] = real_base["Fecha"].dt.date
+        # Ventana operativa (muelle-hora): suma de (último fin - primer inicio) por
+        # muelle y día
+        ventana_min = 0
+        for (_, _), g in real_base.groupby(["Fecha_d", "Muelle"]):
+            ventana_min += g["FinAdj"].max() - g["IniMin"].min()
+        prod_total = real_base["Cantidad"].sum()
+        est_total = real_base["Estibas"].dropna().sum()
+        if ventana_min > 0:
+            und_h_real = prod_total / (ventana_min / 60)
+            est_h_real = est_total / (ventana_min / 60) if est_total > 0 else 0
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("**Ritmo real de despacho** (capacidad efectiva de la operación)")
+            r1, r2 = st.columns(2)
+            with r1:
+                st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['rojo']}">
+                    <div class="kpi-label">Ritmo real · unidades</div>
+                    <div class="kpi-value">{und_h_real:,.0f} und/h</div>
+                    <div class="kpi-sub">producto ÷ ventana operativa (con tiempos muertos y muelles vacíos)</div>
+                </div>""", unsafe_allow_html=True)
+            with r2:
+                st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['rojo']}">
+                    <div class="kpi-label">Ritmo real · estibas</div>
+                    <div class="kpi-value">{est_h_real:.1f} estibas/h</div>
+                    <div class="kpi-sub">estibas ÷ ventana operativa de muelles 1 y 2</div>
+                </div>""", unsafe_allow_html=True)
+            st.caption(
+                f"El **ritmo neto** mide qué tan rápido carga la cuadrilla; el **ritmo "
+                f"real** mide cuánto producto sale de verdad por hora de muelle, "
+                f"contando todo el tiempo transcurrido desde el primer cargue hasta el "
+                f"último en muelles 1 y 2 (incluyendo esperas y muelles vacíos). "
+                f"La diferencia entre ambos es la oportunidad de mejora. Incluye todos "
+                f"los tipos de carga ({len(real_base)} cargues, solo hasta las 17:30).")
 
     st.markdown("<br>", unsafe_allow_html=True)
     colP1, colP2 = st.columns(2)
