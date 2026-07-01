@@ -735,9 +735,10 @@ if len(dprod):
         </div>""", unsafe_allow_html=True)
     st.caption(f"ℹ️ Estibas: {nota_estibas}.")
 
-    # --- Ritmo REAL: producto ÷ ventana operativa (incluye tiempos muertos y
-    # muelles vacíos). Denominador = suma de la ventana operativa (primer inicio a
-    # último fin) de cada muelle 1 y 2 por día = muelle-hora de capacidad usada.
+    # --- Ritmo REAL: producto ÷ tiempo de reloj de la operación (incluye tiempos
+    # muertos y muelles vacíos). Denominador = minutos únicos por día en que AL MENOS
+    # un muelle (1 o 2) estuvo operando, contando los dos en paralelo como una sola
+    # operación (no se suman las horas de cada muelle por separado).
     # Numerador = todo el producto despachado (todos los tipos de carga) en cargues
     # de muelles 1-2 que terminan a más tardar a las 17:30 (registro confiable).
     real_base = df_f[df_f["Muelle"].isin(["1", "2"])
@@ -749,10 +750,11 @@ if len(dprod):
             lambda r: r["FinMin"] + 1440 if r["FinMin"] < r["IniMin"] else r["FinMin"],
             axis=1)
         real_base["Fecha_d"] = real_base["Fecha"].dt.date
-        # Ventana operativa (muelle-hora): suma de (último fin - primer inicio) por
-        # muelle y día
+        # Tiempo de reloj del sistema: por día, desde el primer inicio de cualquier
+        # muelle hasta el último fin de cualquier muelle (cada minuto cuenta una vez,
+        # aunque los dos muelles trabajen simultáneamente).
         ventana_min = 0
-        for (_, _), g in real_base.groupby(["Fecha_d", "Muelle"]):
+        for _, g in real_base.groupby("Fecha_d"):
             ventana_min += g["FinAdj"].max() - g["IniMin"].min()
         prod_total = real_base["Cantidad"].sum()
         est_total = real_base["Estibas"].dropna().sum()
@@ -767,21 +769,22 @@ if len(dprod):
                 st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['rojo']}">
                     <div class="kpi-label">Ritmo real · unidades</div>
                     <div class="kpi-value">{und_h_real:,.0f} und/h</div>
-                    <div class="kpi-sub">producto ÷ ventana operativa (con tiempos muertos y muelles vacíos)</div>
+                    <div class="kpi-sub">producto ÷ tiempo de reloj de la operación (ambos muelles en paralelo)</div>
                 </div>""", unsafe_allow_html=True)
             with r2:
                 st.markdown(f"""<div class="kpi-card" style="border-left-color:{COL['rojo']}">
                     <div class="kpi-label">Ritmo real · estibas</div>
                     <div class="kpi-value">{est_h_real:.1f} estibas/h</div>
-                    <div class="kpi-sub">estibas ÷ ventana operativa de muelles 1 y 2</div>
+                    <div class="kpi-sub">estibas ÷ tiempo de reloj del sistema de despacho</div>
                 </div>""", unsafe_allow_html=True)
             st.caption(
                 f"El **ritmo neto** mide qué tan rápido carga la cuadrilla; el **ritmo "
-                f"real** mide cuánto producto sale de verdad por hora de muelle, "
-                f"contando todo el tiempo transcurrido desde el primer cargue hasta el "
-                f"último en muelles 1 y 2 (incluyendo esperas y muelles vacíos). "
-                f"La diferencia entre ambos es la oportunidad de mejora. Incluye todos "
-                f"los tipos de carga ({len(real_base)} cargues, solo hasta las 17:30).")
+                f"real** mide cuánto producto sale de verdad por hora de operación, "
+                f"contando el tiempo de reloj desde el primer cargue hasta el último "
+                f"cada día en muelles 1 y 2 (los dos en paralelo cuentan como una sola "
+                f"operación, e incluye esperas y muelles vacíos). La diferencia entre "
+                f"ambos ritmos es la oportunidad de mejora. Incluye todos los tipos de "
+                f"carga ({len(real_base)} cargues, solo hasta las 17:30).")
 
     st.markdown("<br>", unsafe_allow_html=True)
     colP1, colP2 = st.columns(2)
